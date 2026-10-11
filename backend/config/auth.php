@@ -116,4 +116,19 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Login Throttling
+    |--------------------------------------------------------------------------
+    |
+    | Failed login attempts allowed per email and IP address pair before the
+    | pair is locked out for the given number of seconds.
+    |
+    */
+
+    'throttle' => [
+        'login_max_attempts' => (int) env('AUTH_LOGIN_MAX_ATTEMPTS', 5),
+        'login_decay_seconds' => (int) env('AUTH_LOGIN_DECAY_SECONDS', 60),
+    ],
+
 ];

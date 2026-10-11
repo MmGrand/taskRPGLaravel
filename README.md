@@ -4,12 +4,34 @@
 
 Продуктовые требования: [.claude/PRPs/prds/task-rpg.prd.md](.claude/PRPs/prds/task-rpg.prd.md)
 
+## Возможности
+
+- Регистрация, вход и выход (сессия в cookie через Sanctum SPA), защита от перебора пароля
+- Часовой пояс пользователя берётся из браузера при регистрации
+- Конструктор персонажа: имя, тон кожи, причёска, цвет волос и борода с живым пиксельным превью
+- Главный экран с персонажем
+
+## API
+
+| Метод | Путь | Доступ | Назначение |
+|---|---|---|---|
+| GET | `/sanctum/csrf-cookie` | все | Выдать CSRF-cookie перед входом или регистрацией |
+| GET | `/api/health` | все | Состояние БД и Redis |
+| POST | `/api/register` | все | Регистрация и вход |
+| POST | `/api/login` | все | Вход (5 неудачных попыток → блокировка на минуту) |
+| POST | `/api/logout` | авторизован | Выход |
+| GET | `/api/user` | авторизован | Текущий пользователь с персонажем |
+| GET | `/api/character` | авторизован | Персонаж пользователя (404, если не создан) |
+| POST | `/api/character` | авторизован | Создать персонажа (409, если уже есть) |
+
+Успешные ответы обёрнуты в `{ "data": ... }`, ошибки валидации приходят в стандартном формате Laravel (`message`, `errors`).
+
 ## Стек
 
 | Слой | Технологии |
 |---|---|
 | Backend | PHP 8.4, Laravel 13 (JSON API), Sanctum |
-| Frontend | Vue 3, TypeScript, Vite, Pinia, Vue Router |
+| Frontend | Vue 3, TypeScript, Vite, Pinia, Vue Router, Tailwind CSS 4 |
 | Хранилища | PostgreSQL 17, Redis 7 |
 | Окружение | Docker Compose |
 | Качество | Pest, Pint, Larastan (level 8), ESLint + Oxlint, Prettier, vue-tsc, Vitest, GitHub Actions |
@@ -69,3 +91,8 @@ npm run build
 - **Нет тестовой БД `task_rpg_test`**: init-скрипты Postgres выполняются только на пустом volume. Пересоздай его: `docker compose down -v && docker compose up -d`.
 - **`entrypoint: no such file or directory`**: у `docker/php/entrypoint.sh` переносы строк CRLF. Репозиторий принудительно хранит LF (`.gitattributes`). Пересохрани файл с LF и выполни `docker compose build app`.
 - **Медленные ответы API на Windows**: это bind mount Docker Desktop. Помогает перенос репозитория в файловую систему WSL2.
+- **419 CSRF token mismatch**: открывай SPA по `http://localhost:5173`, а не `127.0.0.1`. Cookie сессии выдаются для домена `localhost`.
+
+## Ассеты
+
+Спрайты персонажей — [Roguelike Characters](https://kenney.nl/assets/roguelike-characters) от Kenney, лицензия CC0 (`frontend/src/assets/sprites/LICENSE-kenney.txt`).
