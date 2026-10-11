@@ -1,5 +1,6 @@
 {
     "preset": "laravel",
+    "exclude": ["lang"],
     "rules": {
         "declare_strict_types": true,
         "final_class": true

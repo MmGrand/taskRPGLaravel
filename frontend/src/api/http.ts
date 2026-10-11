@@ -1,8 +1,14 @@
 import axios from 'axios'
 
+import { API_URL } from '@/config'
+
+import { rejectWithSessionCheck } from './session'
+
 export const http = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: API_URL.href,
   withCredentials: true,
   withXSRFToken: true,
   headers: { Accept: 'application/json' },
 })
+
+http.interceptors.response.use(undefined, rejectWithSessionCheck)

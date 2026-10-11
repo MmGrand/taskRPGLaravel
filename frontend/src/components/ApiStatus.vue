@@ -13,6 +13,13 @@ const STATE_LABELS: Record<ApiState, string> = {
   unreachable: 'недоступен',
 }
 
+const DOT_CLASSES: Record<ApiState, string> = {
+  loading: 'bg-slate-400',
+  ok: 'bg-success',
+  degraded: 'bg-warning',
+  unreachable: 'bg-danger',
+}
+
 const state = ref<ApiState>('loading')
 const checks = ref<HealthData['checks']>({})
 
@@ -29,48 +36,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="api-status" data-testid="api-status" :data-state="state">
-    <span class="api-status__dot" aria-hidden="true"></span>
+  <section class="flex flex-wrap items-center gap-2" data-testid="api-status" :data-state="state">
+    <span class="size-3 rounded-full" :class="DOT_CLASSES[state]" aria-hidden="true"></span>
     <span>API: {{ STATE_LABELS[state] }}</span>
-    <ul v-if="Object.keys(checks).length > 0" class="api-status__checks">
+    <ul v-if="Object.keys(checks).length > 0" class="flex gap-4 text-slate-400">
       <li v-for="(status, name) in checks" :key="name">{{ name }}: {{ status }}</li>
     </ul>
   </section>
 </template>
-
-<style scoped>
-.api-status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.api-status__dot {
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 50%;
-  background: #9ca3af;
-}
-
-[data-state='ok'] .api-status__dot {
-  background: #16a34a;
-}
-
-[data-state='degraded'] .api-status__dot {
-  background: #eab308;
-}
-
-[data-state='unreachable'] .api-status__dot {
-  background: #dc2626;
-}
-
-.api-status__checks {
-  display: flex;
-  gap: 1rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: #6b7280;
-}
-</style>
