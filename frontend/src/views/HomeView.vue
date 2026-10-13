@@ -10,6 +10,7 @@ import { useFormSubmit } from '@/composables/useFormSubmit'
 import { useRefreshOnVisible } from '@/composables/useRefreshOnVisible'
 import { wornItems } from '@/game/equipment'
 import { formatReward } from '@/game/progression'
+import { formatUnlocked } from '@/game/shop'
 import { useAuthStore } from '@/stores/auth'
 import { useTasksStore } from '@/stores/tasks'
 
@@ -34,6 +35,12 @@ const rewardNotice = computed(() => {
 
   return `${formatReward(reward)}${levelUp}`
 })
+
+const hasNewItems = computed(() => (character.value?.shop.new_items.length ?? 0) > 0)
+// Only right after a level up: the shop link mark covers the rest of the time
+const unlockedNames = computed(() =>
+  tasks.lastReward?.levelUp ? formatUnlocked(character.value?.shop.new_items ?? []) : '',
+)
 const { generalError, submitting, submit } = useFormSubmit()
 
 async function loadTasks(): Promise<void> {
@@ -70,6 +77,20 @@ useRefreshOnVisible(refreshTasks)
   <div class="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
     <header class="flex flex-wrap items-center gap-2">
       <h1 class="mr-auto text-2xl font-bold text-accent">Task RPG</h1>
+      <RouterLink
+        :to="{ name: 'shop' }"
+        class="btn-secondary"
+        :aria-label="hasNewItems ? 'Магазин, есть новое' : undefined"
+      >
+        Магазин
+        <span
+          v-if="hasNewItems"
+          class="ml-1 rounded bg-accent px-1 text-xs text-ink"
+          data-testid="shop-new"
+        >
+          Новое
+        </span>
+      </RouterLink>
       <RouterLink :to="{ name: 'equipment' }" class="btn-secondary">Снаряжение</RouterLink>
       <button
         type="button"
@@ -97,6 +118,11 @@ useRefreshOnVisible(refreshTasks)
         <!-- Always rendered: screen readers announce changes of a live region, not its arrival -->
         <p role="status" class="text-sm text-accent" data-testid="reward-notice">
           {{ rewardNotice }}
+          <template v-if="unlockedNames">
+            <br />
+            В магазине открылись: {{ unlockedNames }}.
+            <RouterLink :to="{ name: 'shop' }" class="underline">В магазин</RouterLink>
+          </template>
         </p>
       </aside>
 

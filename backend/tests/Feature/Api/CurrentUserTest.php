@@ -76,8 +76,8 @@ it('loads the current user and the character without extra queries for the owner
     // Act
     $this->actingAs($character->user)->getJson('/api/user')->assertOk();
 
-    // Assert: character, equipped items, streak days; the owner comes from chaperone()
-    expect($queries)->toBe(3);
+    // Assert: character, equipped items, streak days, new shop items; the owner comes from chaperone()
+    expect($queries)->toBe(4);
 });
 
 it('returns what the character wears', function () {

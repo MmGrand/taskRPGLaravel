@@ -10,6 +10,9 @@ use App\Http\Controllers\Api\CurrentUserController;
 use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\InventoryController;
+use App\Http\Controllers\Api\PurchaseController;
+use App\Http\Controllers\Api\ShopController;
+use App\Http\Controllers\Api\ShopVisitController;
 use App\Http\Controllers\Api\TaskCompletionController;
 use App\Http\Controllers\Api\TaskController;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +30,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/character/inventory', InventoryController::class);
     Route::put('/character/equipment/{slot}', [EquipmentController::class, 'update']);
     Route::delete('/character/equipment/{slot}', [EquipmentController::class, 'destroy']);
+    Route::put('/character/shop-seen', ShopVisitController::class);
+
+    Route::get('/shop', ShopController::class);
+    Route::post('/shop/purchases', PurchaseController::class);
 
     Route::get('/tasks', [TaskController::class, 'index']);
     Route::post('/tasks', [TaskController::class, 'store']);
