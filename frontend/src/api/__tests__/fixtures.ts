@@ -6,6 +6,9 @@ export const characterFixture: Character = {
   id: 1,
   name: 'Торин',
   appearance: { skin_tone: 'tan', hair_style: 'braids', hair_color: 'ginger', beard: 'full' },
+  progress: { level: 1, xp_total: 0, xp_in_level: 0, xp_to_next_level: 50 },
+  gold: 0,
+  streak: { days: 0, active_today: false },
   equipment: [],
   created_at: '2026-10-12T10:00:00+00:00',
 }

@@ -10,7 +10,14 @@ import {
   renameTask,
   uncompleteTask,
 } from '@/api/tasks'
-import { dailyTaskFixture, todoTaskFixture } from '@/api/__tests__/fixtures'
+import {
+  characterFixture,
+  dailyTaskFixture,
+  todoTaskFixture,
+  userFixture,
+} from '@/api/__tests__/fixtures'
+import type { Character, Reward, Task } from '@/api/types'
+import { useAuthStore } from '@/stores/auth'
 
 vi.mock('@/api/tasks', () => ({
   fetchTasks: vi.fn<typeof fetchTasks>(),
@@ -25,6 +32,16 @@ const completedDaily = {
   ...dailyTaskFixture,
   is_completed: true,
   completed_at: '2026-10-13T12:00:00+00:00',
+}
+
+function result(task: Task, character: Character | null, reward: Reward | null) {
+  return { task, character, reward }
+}
+
+const levelTwoHero: Character = {
+  ...characterFixture,
+  progress: { level: 2, xp_total: 55, xp_in_level: 5, xp_to_next_level: 141 },
+  gold: 5,
 }
 
 async function loadedStore() {
@@ -64,8 +81,8 @@ describe('tasks store', () => {
 
   it('completes and uncompletes a task through the matching endpoint', async () => {
     const store = await loadedStore()
-    vi.mocked(completeTask).mockResolvedValue(completedDaily)
-    vi.mocked(uncompleteTask).mockResolvedValue(dailyTaskFixture)
+    vi.mocked(completeTask).mockResolvedValue(result(completedDaily, null, null))
+    vi.mocked(uncompleteTask).mockResolvedValue(result(dailyTaskFixture, null, null))
 
     await store.setCompleted(1, true)
     expect(store.dailies[0]?.is_completed).toBe(true)
@@ -74,6 +91,57 @@ describe('tasks store', () => {
     expect(store.dailies[0]?.is_completed).toBe(false)
     expect(completeTask).toHaveBeenCalledWith(1)
     expect(uncompleteTask).toHaveBeenCalledWith(1)
+  })
+
+  it('updates the hero and remembers the reward of a completion', async () => {
+    const store = await loadedStore()
+    const auth = useAuthStore()
+    auth.user = { ...userFixture, character: characterFixture }
+    const rewarded = { ...characterFixture, gold: 5 }
+    vi.mocked(completeTask).mockResolvedValue(result(completedDaily, rewarded, { xp: 10, gold: 5 }))
+
+    await store.setCompleted(1, true)
+
+    expect(auth.user?.character).toEqual(rewarded)
+    expect(store.lastReward).toEqual({ xp: 10, gold: 5, levelUp: null })
+  })
+
+  it('announces the new level when a completion raises it', async () => {
+    const store = await loadedStore()
+    useAuthStore().user = { ...userFixture, character: characterFixture }
+    vi.mocked(completeTask).mockResolvedValue(
+      result(completedDaily, levelTwoHero, { xp: 10, gold: 5 }),
+    )
+
+    await store.setCompleted(1, true)
+
+    expect(store.lastReward).toEqual({ xp: 10, gold: 5, levelUp: 2 })
+  })
+
+  it('shows a taken back reward without a level up', async () => {
+    const store = await loadedStore()
+    useAuthStore().user = { ...userFixture, character: levelTwoHero }
+    vi.mocked(uncompleteTask).mockResolvedValue(
+      result(dailyTaskFixture, characterFixture, { xp: -10, gold: -5 }),
+    )
+
+    await store.setCompleted(1, false)
+
+    expect(store.lastReward).toEqual({ xp: -10, gold: -5, levelUp: null })
+  })
+
+  it('clears the reward when the request changed nothing and keeps a missing hero untouched', async () => {
+    const store = await loadedStore()
+    const auth = useAuthStore()
+    auth.user = { ...userFixture, character: null }
+    vi.mocked(completeTask).mockResolvedValueOnce(result(completedDaily, null, { xp: 0, gold: 0 }))
+    await store.setCompleted(1, true)
+    vi.mocked(completeTask).mockResolvedValueOnce(result(completedDaily, null, null))
+
+    await store.setCompleted(1, true)
+
+    expect(store.lastReward).toBeNull()
+    expect(auth.user?.character).toBeNull()
   })
 
   it('replaces a renamed task', async () => {
@@ -105,10 +173,15 @@ describe('tasks store', () => {
 
   it('forgets everything on reset', async () => {
     const store = await loadedStore()
+    vi.mocked(completeTask).mockResolvedValue(
+      result(completedDaily, characterFixture, { xp: 10, gold: 5 }),
+    )
+    await store.setCompleted(1, true)
 
     store.reset()
 
     expect(store.tasks).toEqual([])
     expect(store.loaded).toBe(false)
+    expect(store.lastReward).toBeNull()
   })
 })

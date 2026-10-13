@@ -8,6 +8,9 @@ import {
   type EquippedItem,
   type InventoryItem,
   type Item,
+  type Progress,
+  type Reward,
+  type Streak,
   type Task,
   type User,
 } from './types'
@@ -60,6 +63,24 @@ export function isInventory(value: unknown): value is InventoryItem[] {
   )
 }
 
+function isProgress(value: unknown): value is Progress {
+  return (
+    isRecord(value) &&
+    Number.isInteger(value.level) &&
+    Number.isInteger(value.xp_total) &&
+    Number.isInteger(value.xp_in_level) &&
+    Number.isInteger(value.xp_to_next_level)
+  )
+}
+
+function isStreak(value: unknown): value is Streak {
+  return isRecord(value) && Number.isInteger(value.days) && typeof value.active_today === 'boolean'
+}
+
+export function isReward(value: unknown): value is Reward {
+  return isRecord(value) && Number.isInteger(value.xp) && Number.isInteger(value.gold)
+}
+
 export function isCharacter(value: unknown): value is Character {
   return (
     isRecord(value) &&
@@ -67,6 +88,9 @@ export function isCharacter(value: unknown): value is Character {
     typeof value.name === 'string' &&
     typeof value.created_at === 'string' &&
     isAppearance(value.appearance) &&
+    isProgress(value.progress) &&
+    Number.isInteger(value.gold) &&
+    isStreak(value.streak) &&
     Array.isArray(value.equipment) &&
     value.equipment.every(isEquippedItem)
   )
@@ -96,6 +120,17 @@ export function isTask(value: unknown): value is Task {
 
 export function isTaskList(value: unknown): value is Task[] {
   return Array.isArray(value) && value.every(isTask)
+}
+
+export function isCompletionResponse(
+  value: unknown,
+): value is { data: Task; character: Character | null; reward: Reward | null } {
+  return (
+    isRecord(value) &&
+    isTask(value.data) &&
+    (value.character === null || isCharacter(value.character)) &&
+    (value.reward === null || isReward(value.reward))
+  )
 }
 
 export function unwrapData<T>(

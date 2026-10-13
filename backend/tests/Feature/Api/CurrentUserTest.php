@@ -10,6 +10,7 @@ use App\Services\EquipmentService;
 use App\Services\StarterKit;
 use Database\Seeders\ItemCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -47,6 +48,36 @@ it('returns the authenticated user with their character', function () {
         ->assertJsonPath('data.character.id', $character->id)
         ->assertJsonPath('data.character.appearance.skin_tone', 'green')
         ->assertJsonPath('data.character.equipment', []);
+});
+
+it('returns the progress of the character', function () {
+    // Arrange
+    $character = Character::factory()->withXp(60, 25)->create();
+
+    // Act
+    $response = $this->actingAs($character->user)->getJson('/api/user');
+
+    // Assert
+    $response->assertOk()
+        ->assertJsonPath('data.character.progress', ['level' => 2, 'xp_total' => 60, 'xp_in_level' => 10, 'xp_to_next_level' => 141])
+        ->assertJsonPath('data.character.gold', 25)
+        ->assertJsonPath('data.character.streak', ['days' => 0, 'active_today' => false]);
+});
+
+it('loads the current user and the character without extra queries for the owner', function () {
+    // Arrange
+    $character = Character::factory()->create();
+    $this->actingAs($character->user)->getJson('/api/user')->assertOk();
+    $queries = 0;
+    DB::listen(function () use (&$queries): void {
+        $queries++;
+    });
+
+    // Act
+    $this->actingAs($character->user)->getJson('/api/user')->assertOk();
+
+    // Assert: character, equipped items, streak days; the owner comes from chaperone()
+    expect($queries)->toBe(3);
 });
 
 it('returns what the character wears', function () {

@@ -50,6 +50,17 @@ it('gives a new character the starter kit without wearing it', function () {
     $this->assertDatabaseCount('equipped_items', 0);
 });
 
+it('starts a new character at level 1 with no gold and no streak', function () {
+    // Act
+    $response = $this->actingAs($this->user)->postJson('/api/character', $this->payload);
+
+    // Assert
+    $response->assertCreated()
+        ->assertJsonPath('data.progress', ['level' => 1, 'xp_total' => 0, 'xp_in_level' => 0, 'xp_to_next_level' => 50])
+        ->assertJsonPath('data.gold', 0)
+        ->assertJsonPath('data.streak', ['days' => 0, 'active_today' => false]);
+});
+
 it('accepts non-latin names', function () {
     // Act
     $response = $this->actingAs($this->user)->postJson('/api/character', [...$this->payload, 'name' => 'Торин Дубощит']);

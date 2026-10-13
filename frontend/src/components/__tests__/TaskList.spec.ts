@@ -12,7 +12,7 @@ import {
   renameTask,
   uncompleteTask,
 } from '@/api/tasks'
-import type { Task } from '@/api/types'
+import type { CompletionResult, Task } from '@/api/types'
 import { useTasksStore } from '@/stores/tasks'
 
 vi.mock('@/api/tasks', () => ({
@@ -55,7 +55,7 @@ describe('TaskList', () => {
   })
 
   it('locks the list while an action is running', async () => {
-    let finish: (task: Task) => void = () => {}
+    let finish: (result: CompletionResult) => void = () => {}
     vi.mocked(completeTask).mockReturnValue(new Promise((resolve) => (finish = resolve)))
     const wrapper = mountList([dailyTaskFixture, doneDaily])
 
@@ -66,7 +66,7 @@ describe('TaskList', () => {
         .findAll('input[type="checkbox"]')
         .every((box) => box.attributes('disabled') !== undefined),
     ).toBe(true)
-    finish({ ...dailyTaskFixture, is_completed: true })
+    finish({ task: { ...dailyTaskFixture, is_completed: true }, character: null, reward: null })
     await flushPromises()
     expect(wrapper.get('input[type="checkbox"]').attributes('disabled')).toBeUndefined()
   })

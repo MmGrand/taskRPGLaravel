@@ -3,11 +3,13 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import CharacterSprite from '@/components/CharacterSprite.vue'
+import CharacterStats from '@/components/CharacterStats.vue'
 import TaskCreateForm from '@/components/TaskCreateForm.vue'
 import TaskList from '@/components/TaskList.vue'
 import { useFormSubmit } from '@/composables/useFormSubmit'
 import { useRefreshOnVisible } from '@/composables/useRefreshOnVisible'
 import { wornItems } from '@/game/equipment'
+import { formatReward } from '@/game/progression'
 import { useAuthStore } from '@/stores/auth'
 import { useTasksStore } from '@/stores/tasks'
 
@@ -20,6 +22,18 @@ const router = useRouter()
 
 const character = computed(() => auth.user?.character ?? null)
 const loadError = ref<string | null>(null)
+
+const rewardNotice = computed(() => {
+  const reward = tasks.lastReward
+
+  if (reward === null) {
+    return ''
+  }
+
+  const levelUp = reward.levelUp === null ? '' : ` · Новый уровень: ${reward.levelUp}!`
+
+  return `${formatReward(reward)}${levelUp}`
+})
 const { generalError, submitting, submit } = useFormSubmit()
 
 async function loadTasks(): Promise<void> {
@@ -41,9 +55,10 @@ async function onLogout(): Promise<void> {
   }
 }
 
-// Background refresh stays silent on failure but clears an earlier load error on success
+// Background refresh stays silent on failure but clears an earlier load error on success.
+// The hero is refreshed too: after midnight the streak waits for today again
 async function refreshTasks(): Promise<void> {
-  await tasks.load()
+  await Promise.all([tasks.load(), auth.refresh()])
   loadError.value = null
 }
 
@@ -78,6 +93,11 @@ useRefreshOnVisible(refreshTasks)
           :scale="HERO_SCALE"
         />
         <p class="text-2xl font-semibold">{{ character.name }}</p>
+        <CharacterStats :character="character" />
+        <!-- Always rendered: screen readers announce changes of a live region, not its arrival -->
+        <p role="status" class="text-sm text-accent" data-testid="reward-notice">
+          {{ rewardNotice }}
+        </p>
       </aside>
 
       <main class="flex min-w-0 flex-1 flex-col gap-6">

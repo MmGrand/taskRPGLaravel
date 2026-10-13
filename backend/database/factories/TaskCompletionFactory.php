@@ -24,6 +24,8 @@ final class TaskCompletionFactory extends Factory
             'task_id' => Task::factory(),
             'period_date' => now()->toDateString(),
             'completed_at' => now(),
+            'xp_awarded' => 0,
+            'gold_awarded' => 0,
         ];
     }
 

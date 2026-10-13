@@ -21,6 +21,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property HairStyle $hair_style
  * @property HairColor $hair_color
  * @property Beard $beard
+ * @property int $xp
+ * @property int $gold
+ * @property-read User $user
  * @property-read Collection<int, EquippedItem> $equippedItems
  */
 #[Fillable(['name', 'skin_tone', 'hair_style', 'hair_color', 'beard'])]
@@ -28,6 +31,12 @@ final class Character extends Model
 {
     /** @use HasFactory<CharacterFactory> */
     use HasFactory;
+
+    // Mirrors the column defaults, so a just created character knows its XP without a reload
+    protected $attributes = [
+        'xp' => 0,
+        'gold' => 0,
+    ];
 
     /**
      * @return BelongsTo<User, $this>
@@ -65,6 +74,8 @@ final class Character extends Model
             'hair_style' => HairStyle::class,
             'hair_color' => HairColor::class,
             'beard' => Beard::class,
+            'xp' => 'integer',
+            'gold' => 'integer',
         ];
     }
 }

@@ -1,6 +1,6 @@
-import { isTask, isTaskList, unwrapData } from './guards'
+import { isCompletionResponse, isTask, isTaskList, unwrapData } from './guards'
 import { http } from './http'
-import type { CreateTaskPayload, Task } from './types'
+import type { CompletionResult, CreateTaskPayload, Task } from './types'
 
 export async function fetchTasks(): Promise<Task[]> {
   const response = await http.get<unknown>('/tasks')
@@ -24,14 +24,23 @@ export async function deleteTask(id: number): Promise<void> {
   await http.delete(`/tasks/${id}`)
 }
 
-export async function completeTask(id: number): Promise<Task> {
+export async function completeTask(id: number): Promise<CompletionResult> {
   const response = await http.put<unknown>(`/tasks/${id}/completion`)
 
-  return unwrapData(response.data, isTask, 'task')
+  return toCompletionResult(response.data)
 }
 
-export async function uncompleteTask(id: number): Promise<Task> {
+export async function uncompleteTask(id: number): Promise<CompletionResult> {
   const response = await http.delete<unknown>(`/tasks/${id}/completion`)
 
-  return unwrapData(response.data, isTask, 'task')
+  return toCompletionResult(response.data)
+}
+
+// The task comes with the updated hero and what this request changed
+function toCompletionResult(body: unknown): CompletionResult {
+  if (!isCompletionResponse(body)) {
+    throw new Error('Unexpected task completion response')
+  }
+
+  return { task: body.data, character: body.character, reward: body.reward }
 }
