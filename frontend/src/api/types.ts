@@ -39,3 +39,20 @@ export interface LoginPayload {
 export interface CreateCharacterPayload extends Appearance {
   name: string
 }
+
+export const TASK_TYPES = ['daily', 'todo'] as const
+export type TaskType = (typeof TASK_TYPES)[number]
+
+export interface Task {
+  id: number
+  title: string
+  type: TaskType
+  is_completed: boolean
+  completed_at: string | null
+  created_at: string
+}
+
+export interface CreateTaskPayload {
+  title: string
+  type: TaskType
+}

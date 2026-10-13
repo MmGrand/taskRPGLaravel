@@ -150,7 +150,7 @@
 |---|-------|-------------|--------|----------|---------|----------|
 | 1 | Каркас и инфраструктура | Docker Compose, Laravel API, Vue SPA, PostgreSQL, CI, линтеры | complete | - | - | [plan](../plans/completed/project-scaffold-infrastructure.plan.md), [report](../reports/project-scaffold-infrastructure-report.md) |
 | 2 | Аутентификация и персонаж | Регистрация и вход (Sanctum), часовой пояс, создание персонажа со спрайтами Kenney, Tailwind | complete | - | 1 | [plan](../plans/completed/auth-and-character.plan.md), [report](../reports/auth-and-character-report.md) |
-| 3 | Задачи | CRUD ежедневных и разовых задач, отметка выполнения, ежедневный сброс | pending | with 4 | 2 | - |
+| 3 | Задачи | CRUD ежедневных и разовых задач, отметка выполнения, ежедневный сброс | complete | with 4 | 2 | [plan](../plans/completed/tasks.plan.md), [report](../reports/tasks-report.md) |
 | 4 | Аватар и экипировка (визуал) | Каталог предметов, слоты, paper-doll рендер, надевание | pending | with 3 | 2 | - |
 | 5 | Прогрессия | XP, золото, уровни с растущей сложностью, стрики, идемпотентные награды | pending | - | 3 | - |
 | 6 | Магазин и разблокировки | Покупка за золото, открытие предметов по уровню, уведомления о новом | pending | - | 4, 5 | - |
