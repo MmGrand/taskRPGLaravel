@@ -1,6 +1,6 @@
 import { APPEARANCE_OPTIONS } from '@/game/appearance'
 
-import type { Appearance, Character, User } from './types'
+import { TASK_TYPES, type Appearance, type Character, type Task, type User } from './types'
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -38,6 +38,22 @@ export function isUser(value: unknown): value is User {
     typeof value.timezone === 'string' &&
     (value.character === null || isCharacter(value.character))
   )
+}
+
+export function isTask(value: unknown): value is Task {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'number' &&
+    typeof value.title === 'string' &&
+    isOneOf(TASK_TYPES, value.type) &&
+    typeof value.is_completed === 'boolean' &&
+    (value.completed_at === null || typeof value.completed_at === 'string') &&
+    typeof value.created_at === 'string'
+  )
+}
+
+export function isTaskList(value: unknown): value is Task[] {
+  return Array.isArray(value) && value.every(isTask)
 }
 
 export function unwrapData<T>(
