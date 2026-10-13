@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property Beard $beard
  * @property int $xp
  * @property int $gold
+ * @property int $shop_seen_level
  * @property-read User $user
  * @property-read Collection<int, EquippedItem> $equippedItems
  */
@@ -36,6 +37,7 @@ final class Character extends Model
     protected $attributes = [
         'xp' => 0,
         'gold' => 0,
+        'shop_seen_level' => 1,
     ];
 
     /**
@@ -76,6 +78,7 @@ final class Character extends Model
             'beard' => Beard::class,
             'xp' => 'integer',
             'gold' => 'integer',
+            'shop_seen_level' => 'integer',
         ];
     }
 }

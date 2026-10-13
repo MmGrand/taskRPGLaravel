@@ -10,6 +10,7 @@ import {
   type Item,
   type Progress,
   type Reward,
+  type ShopItem,
   type Streak,
   type Task,
   type User,
@@ -81,6 +82,19 @@ export function isReward(value: unknown): value is Reward {
   return isRecord(value) && Number.isInteger(value.xp) && Number.isInteger(value.gold)
 }
 
+function isShopItem(value: unknown): value is ShopItem {
+  return (
+    isRecord(value) &&
+    isItem(value.item) &&
+    typeof value.owned === 'boolean' &&
+    typeof value.unlocked === 'boolean'
+  )
+}
+
+export function isShopCatalog(value: unknown): value is ShopItem[] {
+  return Array.isArray(value) && value.every(isShopItem)
+}
+
 export function isCharacter(value: unknown): value is Character {
   return (
     isRecord(value) &&
@@ -91,6 +105,9 @@ export function isCharacter(value: unknown): value is Character {
     isProgress(value.progress) &&
     Number.isInteger(value.gold) &&
     isStreak(value.streak) &&
+    isRecord(value.shop) &&
+    Array.isArray(value.shop.new_items) &&
+    value.shop.new_items.every(isItem) &&
     Array.isArray(value.equipment) &&
     value.equipment.every(isEquippedItem)
   )

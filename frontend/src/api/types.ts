@@ -25,6 +25,12 @@ export interface EquippedItem {
   item: Item
 }
 
+export interface ShopItem {
+  item: Item
+  owned: boolean
+  unlocked: boolean
+}
+
 export interface InventoryItem {
   item: Item
   acquired_at: string
@@ -55,6 +61,8 @@ export interface Character {
   progress: Progress
   gold: number
   streak: Streak
+  // Unlocked items the player has not seen in the shop yet
+  shop: { new_items: Item[] }
   equipment: EquippedItem[]
   created_at: string
 }

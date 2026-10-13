@@ -9,6 +9,7 @@ export const characterFixture: Character = {
   progress: { level: 1, xp_total: 0, xp_in_level: 0, xp_to_next_level: 50 },
   gold: 0,
   streak: { days: 0, active_today: false },
+  shop: { new_items: [] },
   equipment: [],
   created_at: '2026-10-12T10:00:00+00:00',
 }
@@ -21,6 +22,26 @@ export const headbandFixture: Item = {
   sprite: { col: 28, row: 2 },
   required_level: 1,
   price: 0,
+}
+
+export const greenBandanaFixture: Item = {
+  id: 2,
+  code: 'green_bandana',
+  name: 'Зелёная бандана',
+  slot: 'head',
+  sprite: { col: 30, row: 5 },
+  required_level: 2,
+  price: 30,
+}
+
+export const goldenHelmetFixture: Item = {
+  id: 7,
+  code: 'golden_helmet',
+  name: 'Золотой шлем',
+  slot: 'head',
+  sprite: { col: 30, row: 1 },
+  required_level: 9,
+  price: 260,
 }
 
 export const tealShirtFixture: Item = {

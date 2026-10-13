@@ -74,6 +74,8 @@ describe('isCharacter progress', () => {
     expect(isCharacter(withoutProgress)).toBe(false)
     expect(isCharacter(withoutStreak)).toBe(false)
     expect(isCharacter({ ...characterFixture, gold: 1.5 })).toBe(false)
+    expect(isCharacter({ ...characterFixture, shop: { new_items: [{ id: 2 }] } })).toBe(false)
+    expect(isCharacter({ ...characterFixture, shop: null })).toBe(false)
     expect(
       isCharacter({ ...characterFixture, progress: { ...characterFixture.progress, level: '2' } }),
     ).toBe(false)

@@ -6,6 +6,7 @@ namespace App\Http\Resources;
 
 use App\Models\Character;
 use App\Services\ProgressionService;
+use App\Services\ShopService;
 use App\Services\StreakService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -42,6 +43,9 @@ final class CharacterResource extends JsonResource
             'streak' => [
                 'days' => $streak->days,
                 'active_today' => $streak->activeToday,
+            ],
+            'shop' => [
+                'new_items' => ItemResource::collection(app(ShopService::class)->newItemsFor($this->resource)),
             ],
             'equipment' => EquippedItemResource::collection($this->equippedItems),
             'created_at' => $this->created_at?->toIso8601String(),

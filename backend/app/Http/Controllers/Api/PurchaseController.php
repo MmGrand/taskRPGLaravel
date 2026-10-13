@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Api;
+
+use App\Exceptions\PurchaseRefused;
+use App\Http\Controllers\Api\Concerns\ResolvesCharacter;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\BuyItemRequest;
+use App\Http\Resources\CharacterResource;
+use App\Models\Item;
+use App\Services\ShopService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
+
+final class PurchaseController extends Controller
+{
+    use ResolvesCharacter;
+
+    public function __construct(private readonly ShopService $shop) {}
+
+    public function __invoke(BuyItemRequest $request): JsonResponse
+    {
+        $character = $this->characterOf($request);
+        $item = Item::query()->findOrFail($request->integer('item_id'));
+
+        try {
+            $this->shop->buy($character, $item);
+        } catch (PurchaseRefused $refused) {
+            throw ValidationException::withMessages(['item_id' => $refused->getMessage()]);
+        }
+
+        // The purchase changed a locked copy of the character, so read the new gold back
+        return CharacterResource::make($character->refresh()->load('equippedItems.item'))
+            ->response()
+            ->setStatusCode(Response::HTTP_CREATED);
+    }
+}
