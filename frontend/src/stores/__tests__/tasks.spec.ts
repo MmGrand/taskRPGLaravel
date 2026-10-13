@@ -103,7 +103,7 @@ describe('tasks store', () => {
     await store.setCompleted(1, true)
 
     expect(auth.user?.character).toEqual(rewarded)
-    expect(store.lastReward).toEqual({ xp: 10, gold: 5, levelUp: null })
+    expect(store.lastReward).toEqual({ xp: 10, gold: 5, levelUp: null, id: expect.any(Number) })
   })
 
   it('announces the new level when a completion raises it', async () => {
@@ -115,7 +115,7 @@ describe('tasks store', () => {
 
     await store.setCompleted(1, true)
 
-    expect(store.lastReward).toEqual({ xp: 10, gold: 5, levelUp: 2 })
+    expect(store.lastReward).toEqual({ xp: 10, gold: 5, levelUp: 2, id: expect.any(Number) })
   })
 
   it('shows a taken back reward without a level up', async () => {
@@ -127,7 +127,21 @@ describe('tasks store', () => {
 
     await store.setCompleted(1, false)
 
-    expect(store.lastReward).toEqual({ xp: -10, gold: -5, levelUp: null })
+    expect(store.lastReward).toEqual({ xp: -10, gold: -5, levelUp: null, id: expect.any(Number) })
+  })
+
+  it('gives every reward a new id, so the same numbers twice still read as two rewards', async () => {
+    const store = await loadedStore()
+    useAuthStore().user = { ...userFixture, character: characterFixture }
+    vi.mocked(completeTask).mockResolvedValue(
+      result(completedDaily, characterFixture, { xp: 10, gold: 5 }),
+    )
+
+    await store.setCompleted(1, true)
+    const first = store.lastReward?.id
+    await store.setCompleted(1, true)
+
+    expect(store.lastReward?.id).not.toBe(first)
   })
 
   it('clears the reward when the request changed nothing and keeps a missing hero untouched', async () => {

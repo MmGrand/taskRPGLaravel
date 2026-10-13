@@ -15,12 +15,15 @@ import { useAuthStore } from '@/stores/auth'
 export interface RewardNotice extends Reward {
   // The new level when this change raised it
   levelUp: number | null
+  // Grows with every reward, so the same numbers twice still animate twice
+  id: number
 }
 
 export const useTasksStore = defineStore('tasks', () => {
   const tasks = ref<Task[]>([])
   const loaded = ref(false)
   const lastReward = ref<RewardNotice | null>(null)
+  let rewardCount = 0
 
   const dailies = computed(() => tasks.value.filter((task) => task.type === 'daily'))
   const todos = computed(() => tasks.value.filter((task) => task.type === 'todo'))
@@ -79,7 +82,9 @@ export const useTasksStore = defineStore('tasks', () => {
     const level = character?.progress.level ?? null
     const raised = levelBefore !== null && level !== null && level > levelBefore
 
-    return { ...reward, levelUp: raised ? level : null }
+    rewardCount += 1
+
+    return { ...reward, levelUp: raised ? level : null, id: rewardCount }
   }
 
   return {

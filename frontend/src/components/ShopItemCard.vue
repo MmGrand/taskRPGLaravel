@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 import type { ShopItem } from '@/api/types'
 import SpriteStack from '@/components/SpriteStack.vue'
+import { ICON_OFFSETS } from '@/game/equipment'
 import { shopOffer } from '@/game/shop'
 
 const ICON_SCALE = 3
@@ -34,7 +35,12 @@ const offer = computed(() => shopOffer(props.entry, props.gold))
       data-testid="shop-item-icon"
       :class="{ 'opacity-50': offer.kind === 'locked' }"
     >
-      <SpriteStack :tiles="[entry.item.sprite]" :label="entry.item.name" :scale="ICON_SCALE" />
+      <SpriteStack
+        :tiles="[entry.item.sprite]"
+        :label="entry.item.name"
+        :scale="ICON_SCALE"
+        :offset="ICON_OFFSETS[entry.item.slot]"
+      />
     </span>
     <span class="text-sm">{{ entry.item.name }}</span>
 

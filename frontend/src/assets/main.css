@@ -7,6 +7,51 @@
   --color-success: #16a34a;
   --color-warning: #eab308;
   --color-danger: #dc2626;
+
+  --animate-reward-float: reward-float 1.4s ease-out forwards;
+  --animate-level-pop: level-pop 0.6s ease-out;
+  --animate-hero-glow: hero-glow 1.6s ease-in-out 2;
+
+  /* Centred with left-1/2, so every frame keeps the -50% shift */
+  @keyframes reward-float {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, 0.5rem);
+    }
+    15% {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -2.5rem);
+    }
+  }
+
+  @keyframes level-pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(1.15);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  /* drop-shadow follows the pixel silhouette of the hero, box-shadow would draw a square */
+  @keyframes hero-glow {
+    0%,
+    100% {
+      filter: drop-shadow(0 0 0 transparent);
+    }
+    50% {
+      filter: drop-shadow(0 0 12px var(--color-accent));
+    }
+  }
 }
 
 body {
@@ -18,11 +63,12 @@ body {
     @apply rounded-xl bg-panel p-6 shadow-lg;
   }
 
+  /* Disabled buttons get explicit colours: faded text would fall below the WCAG AA contrast */
   .btn-primary {
-    @apply rounded-md bg-accent px-4 py-2 font-semibold text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply rounded-md bg-accent px-4 py-2 font-semibold text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-200 disabled:hover:brightness-100;
   }
 
   .btn-secondary {
-    @apply rounded-md border border-white/10 px-4 py-2 text-slate-200 transition hover:border-accent disabled:opacity-60;
+    @apply rounded-md border border-white/10 px-4 py-2 text-slate-200 transition hover:border-accent disabled:cursor-not-allowed disabled:border-white/5 disabled:text-slate-400 disabled:hover:border-white/5;
   }
 }
