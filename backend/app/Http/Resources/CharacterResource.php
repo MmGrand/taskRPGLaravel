@@ -27,6 +27,7 @@ final class CharacterResource extends JsonResource
                 'hair_color' => $this->hair_color->value,
                 'beard' => $this->beard->value,
             ],
+            'equipment' => EquippedItemResource::collection($this->equippedItems),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

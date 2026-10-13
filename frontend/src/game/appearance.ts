@@ -1,3 +1,5 @@
+import { DEFAULT_OUTFIT, wornTile, type ItemSlot, type WornItem } from './equipment'
+
 // Sprite map for the Kenney "Roguelike Characters" sheet (CC0): 16x16 tiles with a 1px gap
 export const TILE_SIZE = 16
 export const TILE_STEP = 17
@@ -47,12 +49,6 @@ export const BEARDS = {
   long: 2,
   goatee: 3,
 } as const
-
-// Pants and shirt worn until equipment arrives
-export const STARTER_OUTFIT: readonly Tile[] = [
-  { col: 3, row: 0 },
-  { col: 6, row: 0 },
-]
 
 export type SkinTone = keyof typeof SKIN_TONES
 export type HairColor = keyof typeof HAIR_COLORS
@@ -106,16 +102,29 @@ export const APPEARANCE_OPTIONS = {
   beard: Object.keys(BEARDS) as Beard[],
 } as const
 
-export function appearanceLayers(appearance: Appearance): Tile[] {
+// Bottom to top: skin, legs, body, beard, hair, headgear, shield, weapon
+export function appearanceLayers(
+  appearance: Appearance,
+  equipment: readonly WornItem[] = [],
+): Tile[] {
   const block = HAIR_COLORS[appearance.hair_color]
   const style = HAIR_STYLES[appearance.hair_style]
   const beard = BEARDS[appearance.beard]
+  const worn = (slot: ItemSlot): Tile[] => {
+    const tile = wornTile(equipment, slot)
+
+    return tile === null ? [] : [tile]
+  }
 
   return [
     SKIN_TONES[appearance.skin_tone],
-    ...STARTER_OUTFIT,
+    wornTile(equipment, 'legs') ?? DEFAULT_OUTFIT.legs,
+    wornTile(equipment, 'body') ?? DEFAULT_OUTFIT.body,
     ...(beard === null ? [] : [{ col: block.col + beard, row: block.row + BEARD_ROW_OFFSET }]),
     ...(style === null ? [] : [{ col: block.col + style.dc, row: block.row + style.dr }]),
+    ...worn('head'),
+    ...worn('shield'),
+    ...worn('weapon'),
   ]
 }
 

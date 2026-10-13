@@ -19,6 +19,6 @@ final class LoginController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        return new UserResource($user->load('character'));
+        return new UserResource($user->load('character.equippedItems.item'));
     }
 }

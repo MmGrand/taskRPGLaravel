@@ -1,13 +1,50 @@
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 
-import type { Character, Task, User } from '../types'
+import type { Character, InventoryItem, Item, Task, User } from '../types'
 
 export const characterFixture: Character = {
   id: 1,
   name: 'Торин',
   appearance: { skin_tone: 'tan', hair_style: 'braids', hair_color: 'ginger', beard: 'full' },
+  equipment: [],
   created_at: '2026-10-12T10:00:00+00:00',
 }
+
+export const headbandFixture: Item = {
+  id: 1,
+  code: 'cloth_headband',
+  name: 'Повязка',
+  slot: 'head',
+  sprite: { col: 28, row: 2 },
+  required_level: 1,
+  price: 0,
+}
+
+export const tealShirtFixture: Item = {
+  id: 8,
+  code: 'teal_shirt',
+  name: 'Бирюзовая рубаха',
+  slot: 'body',
+  sprite: { col: 10, row: 0 },
+  required_level: 1,
+  price: 0,
+}
+
+export const woodenSwordFixture: Item = {
+  id: 21,
+  code: 'wooden_sword',
+  name: 'Деревянный меч',
+  slot: 'weapon',
+  sprite: { col: 42, row: 6 },
+  required_level: 1,
+  price: 0,
+}
+
+export const inventoryFixture: InventoryItem[] = [
+  headbandFixture,
+  tealShirtFixture,
+  woodenSwordFixture,
+].map((item) => ({ item, acquired_at: '2026-10-14T10:00:00+00:00' }))
 
 export const userFixture: User = {
   id: 7,

@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { isCharacter, isUser, unwrapData } from '../guards'
-import { characterFixture, userFixture } from './fixtures'
+import { isCharacter, isInventory, isUser, unwrapData } from '../guards'
+import {
+  characterFixture,
+  headbandFixture,
+  inventoryFixture,
+  userFixture,
+  woodenSwordFixture,
+} from './fixtures'
 
 describe('isUser', () => {
   it('accepts a user without a character', () => {
@@ -34,6 +40,43 @@ describe('isCharacter', () => {
 
     expect(isCharacter(characterFixture)).toBe(true)
     expect(isCharacter(unknownHair)).toBe(false)
+  })
+
+  it('accepts a character wearing items', () => {
+    expect(
+      isCharacter({
+        ...characterFixture,
+        equipment: [{ slot: 'weapon', item: woodenSwordFixture }],
+      }),
+    ).toBe(true)
+  })
+
+  it('rejects equipment it cannot render', () => {
+    const { equipment: _equipment, ...withoutEquipment } = characterFixture
+    const brokenSprite = { ...woodenSwordFixture, sprite: { col: '42', row: 6 } }
+
+    expect(isCharacter(withoutEquipment)).toBe(false)
+    expect(
+      isCharacter({ ...characterFixture, equipment: [{ slot: 'feet', item: woodenSwordFixture }] }),
+    ).toBe(false)
+    expect(
+      isCharacter({ ...characterFixture, equipment: [{ slot: 'weapon', item: brokenSprite }] }),
+    ).toBe(false)
+  })
+})
+
+describe('isInventory', () => {
+  it('accepts a list of owned items', () => {
+    expect(isInventory(inventoryFixture)).toBe(true)
+    expect(isInventory([])).toBe(true)
+  })
+
+  it('rejects entries without an item or acquisition date', () => {
+    expect(isInventory([{ item: headbandFixture }])).toBe(false)
+    expect(
+      isInventory([{ item: { ...headbandFixture, slot: 'ring' }, acquired_at: '2026-10-14' }]),
+    ).toBe(false)
+    expect(isInventory({ data: inventoryFixture })).toBe(false)
   })
 })
 

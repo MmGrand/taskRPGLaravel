@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 use App\Models\Character;
 use App\Models\User;
+use Database\Seeders\ItemCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    $this->seed(ItemCatalogSeeder::class);
     $this->user = User::factory()->create();
     $this->payload = [
         'name' => 'Torin',
@@ -34,6 +36,18 @@ it('creates a character for the authenticated user', function () {
         ]);
     $this->assertDatabaseCount('characters', 1);
     $this->assertDatabaseHas('characters', ['user_id' => $this->user->id, 'name' => 'Torin']);
+});
+
+it('gives a new character the starter kit without wearing it', function () {
+    // Act
+    $response = $this->actingAs($this->user)->postJson('/api/character', $this->payload);
+
+    // Assert
+    $response->assertCreated()->assertJsonPath('data.equipment', []);
+    $character = Character::query()->sole();
+    expect($character->inventoryItems()->with('item')->get()->pluck('item.code')->sort()->values()->all())
+        ->toBe(['cloth_headband', 'leather_pants', 'teal_shirt', 'wooden_buckler', 'wooden_sword']);
+    $this->assertDatabaseCount('equipped_items', 0);
 });
 
 it('accepts non-latin names', function () {
@@ -91,7 +105,9 @@ it('returns only the character of the authenticated user', function () {
     $response = $this->actingAs($this->user)->getJson('/api/character');
 
     // Assert
-    $response->assertOk()->assertJsonPath('data.id', $own->id);
+    $response->assertOk()
+        ->assertJsonPath('data.id', $own->id)
+        ->assertJsonPath('data.equipment', []);
 });
 
 it('requires authentication for character endpoints', function () {

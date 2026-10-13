@@ -10,15 +10,18 @@ use App\Enums\HairStyle;
 use App\Enums\SkinTone;
 use Database\Factories\CharacterFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property SkinTone $skin_tone
  * @property HairStyle $hair_style
  * @property HairColor $hair_color
  * @property Beard $beard
+ * @property-read Collection<int, EquippedItem> $equippedItems
  */
 #[Fillable(['name', 'skin_tone', 'hair_style', 'hair_color', 'beard'])]
 final class Character extends Model
@@ -32,6 +35,22 @@ final class Character extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return HasMany<InventoryItem, $this>
+     */
+    public function inventoryItems(): HasMany
+    {
+        return $this->hasMany(InventoryItem::class);
+    }
+
+    /**
+     * @return HasMany<EquippedItem, $this>
+     */
+    public function equippedItems(): HasMany
+    {
+        return $this->hasMany(EquippedItem::class);
     }
 
     /**

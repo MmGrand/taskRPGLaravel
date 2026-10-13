@@ -2,8 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Enums\ItemSlot;
 use App\Models\Character;
+use App\Models\Item;
 use App\Models\User;
+use App\Services\EquipmentService;
+use App\Services\StarterKit;
+use Database\Seeders\ItemCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -40,5 +45,24 @@ it('returns the authenticated user with their character', function () {
     // Assert
     $response->assertOk()
         ->assertJsonPath('data.character.id', $character->id)
-        ->assertJsonPath('data.character.appearance.skin_tone', 'green');
+        ->assertJsonPath('data.character.appearance.skin_tone', 'green')
+        ->assertJsonPath('data.character.equipment', []);
+});
+
+it('returns what the character wears', function () {
+    // Arrange
+    $this->seed(ItemCatalogSeeder::class);
+    $character = Character::factory()->create();
+    app(StarterKit::class)->grantTo($character);
+    $sword = Item::query()->where('code', 'wooden_sword')->sole();
+    app(EquipmentService::class)->equip($character, ItemSlot::Weapon, $sword);
+
+    // Act
+    $response = $this->actingAs($character->user)->getJson('/api/user');
+
+    // Assert
+    $response->assertOk()
+        ->assertJsonPath('data.character.equipment.0.slot', 'weapon')
+        ->assertJsonPath('data.character.equipment.0.item.code', 'wooden_sword')
+        ->assertJsonPath('data.character.equipment.0.item.sprite', ['col' => 42, 'row' => 6]);
 });

@@ -7,9 +7,9 @@ import {
   HAIR_STYLES,
   randomAppearance,
   SKIN_TONES,
-  STARTER_OUTFIT,
   type Appearance,
 } from '../appearance'
+import { DEFAULT_OUTFIT, type WornItem } from '../equipment'
 
 const SHEET_COLUMNS = 54
 const SHEET_ROWS = 12
@@ -25,7 +25,8 @@ describe('appearanceLayers', () => {
   it('stacks body, outfit, beard and hair from bottom to top', () => {
     expect(appearanceLayers(base)).toEqual([
       { col: 0, row: 1 },
-      ...STARTER_OUTFIT,
+      DEFAULT_OUTFIT.legs,
+      DEFAULT_OUTFIT.body,
       { col: 23, row: 3 },
       { col: 24, row: 1 },
     ])
@@ -34,7 +35,37 @@ describe('appearanceLayers', () => {
   it('omits the hair layer for bald characters and the beard layer for clean-shaven ones', () => {
     const layers = appearanceLayers({ ...base, hair_style: 'bald', beard: 'none' })
 
-    expect(layers).toEqual([{ col: 0, row: 1 }, ...STARTER_OUTFIT])
+    expect(layers).toEqual([{ col: 0, row: 1 }, DEFAULT_OUTFIT.legs, DEFAULT_OUTFIT.body])
+  })
+
+  it('replaces the default shirt and pants with worn clothes', () => {
+    const equipment: WornItem[] = [
+      { slot: 'body', sprite: { col: 10, row: 0 } },
+      { slot: 'legs', sprite: { col: 3, row: 1 } },
+    ]
+
+    const layers = appearanceLayers({ ...base, hair_style: 'bald', beard: 'none' }, equipment)
+
+    expect(layers).toEqual([
+      { col: 0, row: 1 },
+      { col: 3, row: 1 },
+      { col: 10, row: 0 },
+    ])
+  })
+
+  it('draws headgear, shield and weapon above the hair whatever the equipment order', () => {
+    const equipment: WornItem[] = [
+      { slot: 'weapon', sprite: { col: 42, row: 6 } },
+      { slot: 'shield', sprite: { col: 33, row: 0 } },
+      { slot: 'head', sprite: { col: 28, row: 2 } },
+    ]
+
+    expect(appearanceLayers(base, equipment).slice(-4)).toEqual([
+      { col: 24, row: 1 },
+      { col: 28, row: 2 },
+      { col: 33, row: 0 },
+      { col: 42, row: 6 },
+    ])
   })
 
   it('keeps every appearance combination inside the sprite sheet grid', () => {

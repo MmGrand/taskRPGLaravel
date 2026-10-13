@@ -1,6 +1,7 @@
-import type { Appearance } from '@/game/appearance'
+import type { Appearance, Tile } from '@/game/appearance'
+import type { ItemSlot } from '@/game/equipment'
 
-export type { Appearance }
+export type { Appearance, ItemSlot }
 
 export type CheckStatus = 'ok' | 'fail'
 
@@ -9,10 +10,31 @@ export interface HealthData {
   checks: Record<string, CheckStatus>
 }
 
+export interface Item {
+  id: number
+  code: string
+  name: string
+  slot: ItemSlot
+  sprite: Tile
+  required_level: number
+  price: number
+}
+
+export interface EquippedItem {
+  slot: ItemSlot
+  item: Item
+}
+
+export interface InventoryItem {
+  item: Item
+  acquired_at: string
+}
+
 export interface Character {
   id: number
   name: string
   appearance: Appearance
+  equipment: EquippedItem[]
   created_at: string
 }
 

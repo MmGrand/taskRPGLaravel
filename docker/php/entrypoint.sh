@@ -11,5 +11,7 @@ if [ ! -f .env ]; then
 fi
 
 php artisan migrate --force
+# Reference data: the item catalog and starter kits (safe to run on every start)
+php artisan db:seed --class=ItemCatalogSeeder --force
 
 exec "$@"
