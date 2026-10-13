@@ -163,6 +163,7 @@ return [
         'beard'                    => 'борода',
         'hair_color'               => 'цвет волос',
         'hair_style'               => 'причёска',
+        'item_id'                  => 'предмет',
         'skin_tone'                => 'тон кожи',
         'timezone'                 => 'часовой пояс',
         'title'                    => 'название',

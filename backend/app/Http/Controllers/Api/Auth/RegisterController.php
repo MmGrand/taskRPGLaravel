@@ -21,7 +21,7 @@ final class RegisterController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return UserResource::make($user->load('character'))
+        return UserResource::make($user->load('character.equippedItems.item'))
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);
     }

@@ -33,6 +33,24 @@ describe('CharacterSprite', () => {
     expect(hair?.attributes('style')).toContain('background-size: 3672px 812px')
   })
 
+  it('draws worn items on top of the hero', () => {
+    const wrapper = mount(CharacterSprite, {
+      props: {
+        appearance,
+        label: 'Торин',
+        scale: 1,
+        equipment: [{ slot: 'weapon', sprite: { col: 42, row: 6 } }],
+      },
+    })
+
+    const layers = wrapper.findAll('[data-testid="sprite-layer"]')
+
+    expect(layers).toHaveLength(appearanceLayers(appearance).length + 1)
+    expect(layers[layers.length - 1]?.attributes('style')).toContain(
+      'background-position: -714px -102px',
+    )
+  })
+
   it('rounds a fractional scale to keep pixels crisp', () => {
     const wrapper = mount(CharacterSprite, { props: { appearance, label: 'Торин', scale: 2.6 } })
 

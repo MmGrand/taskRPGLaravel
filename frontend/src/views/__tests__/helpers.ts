@@ -10,6 +10,7 @@ export function makeTestRouter(name: string, view: Component): Router {
     { path: '/login', name: 'login' },
     { path: '/register', name: 'register' },
     { path: '/character/new', name: 'character-create' },
+    { path: '/equipment', name: 'equipment' },
   ]
 
   return createRouter({

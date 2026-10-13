@@ -1,6 +1,16 @@
-import { APPEARANCE_OPTIONS } from '@/game/appearance'
+import { APPEARANCE_OPTIONS, type Tile } from '@/game/appearance'
+import { ITEM_SLOTS } from '@/game/equipment'
 
-import { TASK_TYPES, type Appearance, type Character, type Task, type User } from './types'
+import {
+  TASK_TYPES,
+  type Appearance,
+  type Character,
+  type EquippedItem,
+  type InventoryItem,
+  type Item,
+  type Task,
+  type User,
+} from './types'
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -20,13 +30,45 @@ export function isAppearance(value: unknown): value is Appearance {
   )
 }
 
+function isTile(value: unknown): value is Tile {
+  return isRecord(value) && Number.isInteger(value.col) && Number.isInteger(value.row)
+}
+
+export function isItem(value: unknown): value is Item {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'number' &&
+    typeof value.code === 'string' &&
+    typeof value.name === 'string' &&
+    isOneOf(ITEM_SLOTS, value.slot) &&
+    isTile(value.sprite) &&
+    typeof value.required_level === 'number' &&
+    typeof value.price === 'number'
+  )
+}
+
+function isEquippedItem(value: unknown): value is EquippedItem {
+  return isRecord(value) && isOneOf(ITEM_SLOTS, value.slot) && isItem(value.item)
+}
+
+export function isInventory(value: unknown): value is InventoryItem[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (entry) => isRecord(entry) && isItem(entry.item) && typeof entry.acquired_at === 'string',
+    )
+  )
+}
+
 export function isCharacter(value: unknown): value is Character {
   return (
     isRecord(value) &&
     typeof value.id === 'number' &&
     typeof value.name === 'string' &&
     typeof value.created_at === 'string' &&
-    isAppearance(value.appearance)
+    isAppearance(value.appearance) &&
+    Array.isArray(value.equipment) &&
+    value.equipment.every(isEquippedItem)
   )
 }
 

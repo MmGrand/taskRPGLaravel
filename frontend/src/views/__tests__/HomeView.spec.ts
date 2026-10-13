@@ -9,7 +9,9 @@ import {
   dailyTaskFixture,
   todoTaskFixture,
   userFixture,
+  woodenSwordFixture,
 } from '@/api/__tests__/fixtures'
+import type { Character } from '@/api/types'
 import { fetchCurrentUser, login, logout, register } from '@/api/auth'
 import {
   completeTask,
@@ -40,10 +42,10 @@ vi.mock('@/api/tasks', () => ({
 // Mounted views keep their visibilitychange listeners on document until unmounted
 enableAutoUnmount(afterEach)
 
-async function mountView() {
+async function mountView(character: Character = characterFixture) {
   const pinia = createPinia()
   setActivePinia(pinia)
-  useAuthStore().user = { ...userFixture, character: characterFixture }
+  useAuthStore().user = { ...userFixture, character }
 
   const router = makeTestRouter('home', HomeView)
   await router.push('/')
@@ -69,6 +71,29 @@ describe('HomeView', () => {
     expect(wrapper.text()).toContain(characterFixture.name)
     expect(wrapper.get('section[aria-label="Ежедневные"]').text()).toContain('30 минут Go')
     expect(wrapper.get('section[aria-label="Разовые"]').text()).toContain('Купить гантели')
+  })
+
+  it('links to the equipment page', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([])
+    const { wrapper } = await mountView()
+
+    const link = wrapper.findAll('a').find((anchor) => anchor.text() === 'Снаряжение')
+
+    expect(link?.attributes('href')).toBe('/equipment')
+  })
+
+  it('shows the hero in the equipment they wear', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([])
+    const plain = await mountView()
+    const plainLayers = plain.wrapper.findAll('[data-testid="sprite-layer"]').length
+    plain.wrapper.unmount()
+
+    const armed = await mountView({
+      ...characterFixture,
+      equipment: [{ slot: 'weapon', item: woodenSwordFixture }],
+    })
+
+    expect(armed.wrapper.findAll('[data-testid="sprite-layer"]')).toHaveLength(plainLayers + 1)
   })
 
   it('tells the user when tasks cannot be loaded', async () => {

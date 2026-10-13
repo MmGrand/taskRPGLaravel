@@ -7,6 +7,7 @@ import TaskCreateForm from '@/components/TaskCreateForm.vue'
 import TaskList from '@/components/TaskList.vue'
 import { useFormSubmit } from '@/composables/useFormSubmit'
 import { useRefreshOnVisible } from '@/composables/useRefreshOnVisible'
+import { wornItems } from '@/game/equipment'
 import { useAuthStore } from '@/stores/auth'
 import { useTasksStore } from '@/stores/tasks'
 
@@ -52,8 +53,9 @@ useRefreshOnVisible(refreshTasks)
 
 <template>
   <div class="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
-    <header class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-accent">Task RPG</h1>
+    <header class="flex flex-wrap items-center gap-2">
+      <h1 class="mr-auto text-2xl font-bold text-accent">Task RPG</h1>
+      <RouterLink :to="{ name: 'equipment' }" class="btn-secondary">Снаряжение</RouterLink>
       <button
         type="button"
         class="btn-secondary"
@@ -72,6 +74,7 @@ useRefreshOnVisible(refreshTasks)
         <CharacterSprite
           :appearance="character.appearance"
           :label="character.name"
+          :equipment="wornItems(character)"
           :scale="HERO_SCALE"
         />
         <p class="text-2xl font-semibold">{{ character.name }}</p>
