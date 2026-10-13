@@ -11,6 +11,12 @@ export default mergeConfig(
       root: fileURLToPath(new URL('./', import.meta.url)),
       // Tests must not depend on a developer's local .env file (CI has none)
       env: { VITE_API_URL: 'http://localhost:8000/api' },
+      coverage: {
+        // Every source file counts, not only those some test imports
+        include: ['src/**/*.{ts,vue}'],
+        exclude: ['src/**/__tests__/**', 'src/main.ts'],
+        thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
+      },
     },
   }),
 )

@@ -216,6 +216,68 @@ describe('HomeView', () => {
     expect(wrapper.get('[data-testid="character-stats"]').text()).toContain('Уровень 2')
   })
 
+  it('floats the reward over the hero and celebrates only a level that rose', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([dailyTaskFixture, todoTaskFixture])
+    const levelTwoHero: Character = {
+      ...characterFixture,
+      progress: { level: 2, xp_total: 55, xp_in_level: 5, xp_to_next_level: 141 },
+    }
+    vi.mocked(completeTask)
+      .mockResolvedValueOnce({
+        task: { ...dailyTaskFixture, is_completed: true },
+        character: levelTwoHero,
+        reward: { xp: 10, gold: 5 },
+      })
+      .mockResolvedValueOnce({
+        task: { ...todoTaskFixture, is_completed: true },
+        character: levelTwoHero,
+        reward: { xp: 10, gold: 5 },
+      })
+    const { wrapper } = await mountView()
+    const checkboxes = wrapper.findAll('input[type="checkbox"]')
+
+    await checkboxes[0]?.trigger('click')
+    await flushPromises()
+    const firstFloat = wrapper.get('[data-testid="reward-float"]').element
+
+    expect(wrapper.get('[data-testid="reward-float"]').text()).toBe('+10 XP · +5 золота')
+    expect(wrapper.get('[data-testid="level-up-banner"]').text()).toBe('Уровень 2!')
+    expect(wrapper.get('[data-testid="hero"]').classes()).toContain('motion-safe:animate-hero-glow')
+
+    await checkboxes[1]?.trigger('click')
+    await flushPromises()
+
+    // The same reward again is a new float, so its animation plays again
+    expect(wrapper.get('[data-testid="reward-float"]').element).not.toBe(firstFloat)
+    expect(wrapper.find('[data-testid="level-up-banner"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="hero"]').classes()).not.toContain(
+      'motion-safe:animate-hero-glow',
+    )
+  })
+
+  it('does not replay the celebration of an earlier reward on coming back', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([dailyTaskFixture])
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    useAuthStore().user = { ...userFixture, character: characterFixture }
+    // A level up that happened before the player went to the shop and back
+    useTasksStore().lastReward = { xp: 20, gold: 10, levelUp: 5, id: 3 }
+    const router = makeTestRouter('home', HomeView)
+    await router.push('/')
+    await router.isReady()
+
+    const wrapper = mount(HomeView, { global: { plugins: [pinia, router] } })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="reward-float"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="level-up-banner"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="hero"]').classes()).not.toContain(
+      'motion-safe:animate-hero-glow',
+    )
+    // The status line still tells what the last change gave
+    expect(wrapper.get('[data-testid="reward-notice"]').text()).toContain('Новый уровень: 5!')
+  })
+
   it('shows a taken back reward without a level line', async () => {
     vi.mocked(fetchTasks).mockResolvedValue([
       { ...dailyTaskFixture, is_completed: true, completed_at: '2026-10-13T12:00:00+00:00' },

@@ -28,7 +28,7 @@ const streakWaits = computed(() => !streak.value.active_today && streak.value.da
     >
       <div
         data-testid="xp-bar"
-        class="h-full bg-accent"
+        class="h-full bg-accent transition-[width] duration-500 ease-out motion-reduce:transition-none"
         :style="{ width: `${xpPercent(progress)}%` }"
       />
     </div>

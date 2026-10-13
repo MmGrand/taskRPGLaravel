@@ -7,7 +7,7 @@ import CharacterSprite from '@/components/CharacterSprite.vue'
 import ItemCard from '@/components/ItemCard.vue'
 import SpriteStack from '@/components/SpriteStack.vue'
 import { useFormSubmit } from '@/composables/useFormSubmit'
-import { ITEM_SLOTS, SLOT_LABELS, wornItems } from '@/game/equipment'
+import { ICON_OFFSETS, ITEM_SLOTS, SLOT_LABELS, wornItems } from '@/game/equipment'
 import { useAuthStore } from '@/stores/auth'
 
 const HERO_SCALE = 10
@@ -95,6 +95,7 @@ onMounted(loadInventory)
                   :tiles="[worn.item.sprite]"
                   :label="worn.item.name"
                   :scale="SLOT_ICON_SCALE"
+                  :offset="ICON_OFFSETS[worn.slot]"
                 />
               </span>
               <span class="min-w-0 flex-1 break-words">{{ worn.item.name }}</span>

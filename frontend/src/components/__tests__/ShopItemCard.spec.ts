@@ -30,6 +30,14 @@ describe('ShopItemCard', () => {
     expect(wrapper.get('[role="img"]').element.closest('[aria-hidden="true"]')).not.toBeNull()
   })
 
+  it('centres the icon of headgear drawn at the top of its tile', () => {
+    const wrapper = mountCard()
+
+    expect(wrapper.get('[data-testid="sprite-layer"]').attributes('style')).toContain(
+      'transform: translate(0px, 15px)',
+    )
+  })
+
   it('shows a bought item without a button', () => {
     const wrapper = mountCard({ ...bandana, owned: true })
 

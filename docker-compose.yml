@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
+    environment:
+      SEED_DEMO: "${SEED_DEMO:-true}"
     volumes:
       - ./backend:/var/www/html
     depends_on:

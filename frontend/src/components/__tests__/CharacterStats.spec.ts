@@ -37,6 +37,14 @@ describe('CharacterStats', () => {
     expect(wrapper.get('[data-testid="xp-bar"]').attributes('style')).toContain('width: 14%')
   })
 
+  it('grows the XP bar smoothly unless the user asks for less motion', () => {
+    const wrapper = mountStats(seasonedHero)
+
+    expect(wrapper.get('[data-testid="xp-bar"]').classes()).toEqual(
+      expect.arrayContaining(['transition-[width]', 'motion-reduce:transition-none']),
+    )
+  })
+
   it('hints that a living streak waits for today', () => {
     const waiting = mountStats({ ...seasonedHero, streak: { days: 3, active_today: false } })
 

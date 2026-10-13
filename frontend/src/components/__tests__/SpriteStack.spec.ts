@@ -29,4 +29,30 @@ describe('SpriteStack', () => {
       'background-position: -2142px -306px',
     )
   })
+
+  it('shifts the layers by the offset in screen pixels and clips them to the frame', () => {
+    const wrapper = mount(SpriteStack, {
+      props: {
+        tiles: [{ col: 42, row: 6 }],
+        label: 'Деревянный меч',
+        scale: 3,
+        offset: { x: 1, y: -2 },
+      },
+    })
+
+    expect(wrapper.get('[data-testid="sprite-layer"]').attributes('style')).toContain(
+      'transform: translate(3px, -6px)',
+    )
+    expect(wrapper.get('[role="img"]').classes()).toContain('overflow-hidden')
+  })
+
+  it('draws the layers in place without an offset', () => {
+    const wrapper = mount(SpriteStack, {
+      props: { tiles: [{ col: 42, row: 6 }], label: 'Деревянный меч' },
+    })
+
+    expect(wrapper.get('[data-testid="sprite-layer"]').attributes('style')).not.toContain(
+      'transform',
+    )
+  })
 })

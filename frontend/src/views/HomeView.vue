@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 
 import CharacterSprite from '@/components/CharacterSprite.vue'
 import CharacterStats from '@/components/CharacterStats.vue'
+import LevelUpBanner from '@/components/LevelUpBanner.vue'
+import RewardFloat from '@/components/RewardFloat.vue'
 import TaskCreateForm from '@/components/TaskCreateForm.vue'
 import TaskList from '@/components/TaskList.vue'
 import { useFormSubmit } from '@/composables/useFormSubmit'
@@ -36,6 +38,13 @@ const rewardNotice = computed(() => {
   return `${formatReward(reward)}${levelUp}`
 })
 
+// The store keeps the last reward across pages; only one earned while this page is open celebrates,
+// so coming back from the shop does not replay it
+const rewardBeforeMount = tasks.lastReward?.id ?? 0
+const freshReward = computed(() =>
+  tasks.lastReward !== null && tasks.lastReward.id > rewardBeforeMount ? tasks.lastReward : null,
+)
+const levelUp = computed(() => freshReward.value?.levelUp ?? null)
 const hasNewItems = computed(() => (character.value?.shop.new_items.length ?? 0) > 0)
 // Only right after a level up: the shop link mark covers the rest of the time
 const unlockedNames = computed(() =>
@@ -106,14 +115,28 @@ useRefreshOnVisible(refreshTasks)
     <p v-if="generalError" class="text-sm text-danger" role="alert">{{ generalError }}</p>
 
     <div class="flex flex-col gap-6 md:flex-row md:items-start">
-      <aside v-if="character" class="card flex flex-col items-center gap-4 md:sticky md:top-8">
-        <CharacterSprite
-          :appearance="character.appearance"
-          :label="character.name"
-          :equipment="wornItems(character)"
-          :scale="HERO_SCALE"
-        />
+      <!-- A fixed width on wide screens: a long reward line wraps instead of shifting the layout -->
+      <aside
+        v-if="character"
+        class="card relative flex flex-col items-center gap-4 md:sticky md:top-8 md:w-80 md:shrink-0"
+      >
+        <RewardFloat v-if="freshReward" :key="freshReward.id" :notice="freshReward" />
+        <!-- A new level remounts the wrapper, so the glow plays again on every level up -->
+        <div
+          :key="levelUp === null ? 'hero' : `level-${freshReward?.id}`"
+          class="inline-block"
+          :class="{ 'motion-safe:animate-hero-glow': levelUp !== null }"
+          data-testid="hero"
+        >
+          <CharacterSprite
+            :appearance="character.appearance"
+            :label="character.name"
+            :equipment="wornItems(character)"
+            :scale="HERO_SCALE"
+          />
+        </div>
         <p class="text-2xl font-semibold">{{ character.name }}</p>
+        <LevelUpBanner v-if="levelUp !== null" :key="freshReward?.id" :level="levelUp" />
         <CharacterStats :character="character" />
         <!-- Always rendered: screen readers announce changes of a live region, not its arrival -->
         <p role="status" class="text-sm text-accent" data-testid="reward-notice">

@@ -90,6 +90,13 @@ describe('EquipmentView', () => {
     expect(inventory.text()).toContain('Деревянный меч')
   })
 
+  it('centres the icon of a worn item next to its slot', async () => {
+    const wrapper = await mountView(armed)
+
+    const icon = wrapper.get('section[aria-label="Надето"] [data-testid="sprite-layer"]')
+    expect(icon.attributes('style')).toContain('transform: translate(')
+  })
+
   it('puts an item on the hero', async () => {
     vi.mocked(equipItem).mockResolvedValue(armed)
     const wrapper = await mountView()

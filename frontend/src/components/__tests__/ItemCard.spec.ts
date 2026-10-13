@@ -25,6 +25,14 @@ describe('ItemCard', () => {
     expect(wrapper.get('button').text()).toBe('Деревянный меч')
   })
 
+  it('centres the icon of an item drawn in the hand of the hero', () => {
+    const wrapper = mountCard()
+
+    expect(wrapper.get('[data-testid="sprite-layer"]').attributes('style')).toContain(
+      'transform: translate(15px, 0px)',
+    )
+  })
+
   it('marks a worn item and does not equip it again', () => {
     const wrapper = mountCard(true)
     const button = wrapper.get('button')

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Item } from '@/api/types'
 import SpriteStack from '@/components/SpriteStack.vue'
+import { ICON_OFFSETS } from '@/game/equipment'
 
 const ICON_SCALE = 3
 
@@ -24,10 +25,15 @@ const emit = defineEmits<{
     :disabled="disabled || equipped"
     @click="emit('equip')"
   >
-    <!-- Decorative: the title below already names the item. Shields and weapons sit
-         off-centre because they are drawn in the hero's hands -->
+    <!-- Decorative: the title below already names the item. The offset centres items
+         drawn where they sit on the hero -->
     <span aria-hidden="true">
-      <SpriteStack :tiles="[item.sprite]" :label="item.name" :scale="ICON_SCALE" />
+      <SpriteStack
+        :tiles="[item.sprite]"
+        :label="item.name"
+        :scale="ICON_SCALE"
+        :offset="ICON_OFFSETS[item.slot]"
+      />
     </span>
     <span class="text-sm">{{ item.name }}</span>
     <span v-if="equipped" class="text-xs text-accent">Надето</span>
