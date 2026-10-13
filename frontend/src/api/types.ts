@@ -30,10 +30,31 @@ export interface InventoryItem {
   acquired_at: string
 }
 
+export interface Progress {
+  level: number
+  xp_total: number
+  xp_in_level: number
+  xp_to_next_level: number
+}
+
+export interface Streak {
+  days: number
+  active_today: boolean
+}
+
+// XP and gold one request changed: positive for a completion, negative for an undo
+export interface Reward {
+  xp: number
+  gold: number
+}
+
 export interface Character {
   id: number
   name: string
   appearance: Appearance
+  progress: Progress
+  gold: number
+  streak: Streak
   equipment: EquippedItem[]
   created_at: string
 }
@@ -72,6 +93,12 @@ export interface Task {
   is_completed: boolean
   completed_at: string | null
   created_at: string
+}
+
+export interface CompletionResult {
+  task: Task
+  character: Character | null
+  reward: Reward | null
 }
 
 export interface CreateTaskPayload {

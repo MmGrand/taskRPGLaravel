@@ -26,7 +26,8 @@ final class User extends Authenticatable
      */
     public function character(): HasOne
     {
-        return $this->hasOne(Character::class);
+        // Sets character->user on load, so resources reading the owner do not query again
+        return $this->hasOne(Character::class)->chaperone();
     }
 
     /**

@@ -36,4 +36,9 @@ final class CharacterFactory extends Factory
             'beard' => fake()->randomElement(Beard::cases()),
         ];
     }
+
+    public function withXp(int $xp, int $gold = 0): static
+    {
+        return $this->state(fn (array $attributes) => ['xp' => $xp, 'gold' => $gold]);
+    }
 }

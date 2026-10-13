@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { isCharacter, isInventory, isUser, unwrapData } from '../guards'
+import { isCharacter, isCompletionResponse, isInventory, isUser, unwrapData } from '../guards'
 import {
   characterFixture,
+  dailyTaskFixture,
   headbandFixture,
   inventoryFixture,
   userFixture,
@@ -62,6 +63,50 @@ describe('isCharacter', () => {
     expect(
       isCharacter({ ...characterFixture, equipment: [{ slot: 'weapon', item: brokenSprite }] }),
     ).toBe(false)
+  })
+})
+
+describe('isCharacter progress', () => {
+  it('rejects a hero without progress, gold or streak it can show', () => {
+    const { progress: _progress, ...withoutProgress } = characterFixture
+    const { streak: _streak, ...withoutStreak } = characterFixture
+
+    expect(isCharacter(withoutProgress)).toBe(false)
+    expect(isCharacter(withoutStreak)).toBe(false)
+    expect(isCharacter({ ...characterFixture, gold: 1.5 })).toBe(false)
+    expect(
+      isCharacter({ ...characterFixture, progress: { ...characterFixture.progress, level: '2' } }),
+    ).toBe(false)
+    expect(isCharacter({ ...characterFixture, streak: { days: 3, active_today: 'yes' } })).toBe(
+      false,
+    )
+  })
+})
+
+describe('isCompletionResponse', () => {
+  it('accepts a task with the hero and the reward, or without them', () => {
+    expect(
+      isCompletionResponse({
+        data: dailyTaskFixture,
+        character: characterFixture,
+        reward: { xp: -10, gold: -5 },
+      }),
+    ).toBe(true)
+    expect(isCompletionResponse({ data: dailyTaskFixture, character: null, reward: null })).toBe(
+      true,
+    )
+  })
+
+  it('rejects missing keys and a reward it cannot show', () => {
+    expect(isCompletionResponse({ data: dailyTaskFixture })).toBe(false)
+    expect(
+      isCompletionResponse({
+        data: dailyTaskFixture,
+        character: null,
+        reward: { xp: '1', gold: 0 },
+      }),
+    ).toBe(false)
+    expect(isCompletionResponse(null)).toBe(false)
   })
 })
 
