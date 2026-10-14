@@ -2,6 +2,7 @@
 import { nextTick, ref, useTemplateRef } from 'vue'
 
 import type { Task } from '@/api/types'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 const props = defineProps<{
   task: Task
@@ -16,6 +17,7 @@ const emit = defineEmits<{
 
 const editing = ref(false)
 const draft = ref('')
+const confirmingRemoval = ref(false)
 const titleInput = useTemplateRef<HTMLInputElement>('titleInput')
 
 async function startEditing(): Promise<void> {
@@ -44,10 +46,9 @@ function cancel(): void {
   editing.value = false
 }
 
-function onRemove(): void {
-  if (window.confirm(`Удалить «${props.task.title}»?`)) {
-    emit('remove')
-  }
+function confirmRemoval(): void {
+  confirmingRemoval.value = false
+  emit('remove')
 }
 </script>
 
@@ -82,23 +83,64 @@ function onRemove(): void {
       {{ task.title }}
     </span>
 
+    <!-- Pencil and trash outlines from Lucide (ISC); the button label names the action -->
     <button
       type="button"
-      class="btn-secondary px-2 py-1"
+      class="btn-secondary inline-flex items-center px-2 py-1.5"
       aria-label="Переименовать"
       :disabled="disabled"
       @click="startEditing"
     >
-      ✎
+      <svg
+        aria-hidden="true"
+        class="size-4"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"
+        />
+        <path d="m15 5 4 4" />
+      </svg>
     </button>
     <button
       type="button"
-      class="btn-secondary px-2 py-1"
+      class="btn-secondary inline-flex items-center px-2 py-1.5"
       aria-label="Удалить"
       :disabled="disabled"
-      @click="onRemove"
+      @click="confirmingRemoval = true"
     >
-      🗑
+      <svg
+        aria-hidden="true"
+        class="size-4"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M3 6h18" />
+        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+        <line x1="10" x2="10" y1="11" y2="17" />
+        <line x1="14" x2="14" y1="11" y2="17" />
+      </svg>
     </button>
+
+    <!-- While another action of the list runs, the removal would be dropped, so it waits -->
+    <ConfirmDialog
+      v-if="confirmingRemoval"
+      title="Удалить задачу?"
+      :message="`«${task.title}» пропадёт из списка.`"
+      confirm-label="Удалить"
+      :busy="disabled"
+      @confirm="confirmRemoval"
+      @cancel="confirmingRemoval = false"
+    />
   </li>
 </template>

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
 
 import { buyItem, fetchShop, markShopSeen } from '@/api/shop'
 import type { ShopItem } from '@/api/types'
 import CharacterSprite from '@/components/CharacterSprite.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import ShopItemCard from '@/components/ShopItemCard.vue'
 import { useFormSubmit } from '@/composables/useFormSubmit'
 import { ITEM_SLOTS, SLOT_LABELS, wornItems } from '@/game/equipment'
@@ -18,6 +19,8 @@ const character = computed(() => auth.user?.character ?? null)
 const catalog = ref<ShopItem[]>([])
 const loaded = ref(false)
 const loadError = ref<string | null>(null)
+const pendingPurchase = ref<ShopItem | null>(null)
+const goods = useTemplateRef<HTMLElement>('goods')
 const { errors, generalError, submitting, submit } = useFormSubmit()
 
 const catalogBySlot = computed(() =>
@@ -55,8 +58,16 @@ async function markSeen(): Promise<void> {
 }
 
 // Spent gold cannot be returned, so the player confirms first
-async function onBuy(entry: ShopItem): Promise<void> {
-  if (!window.confirm(`Купить «${entry.item.name}» за ${entry.item.price} золота?`)) {
+function onBuy(entry: ShopItem): void {
+  pendingPurchase.value = entry
+}
+
+// The dialog closes before the request, so a refusal is not hidden behind its backdrop
+async function confirmPurchase(): Promise<void> {
+  const entry = pendingPurchase.value
+  pendingPurchase.value = null
+
+  if (entry === null) {
     return
   }
 
@@ -66,6 +77,14 @@ async function onBuy(entry: ShopItem): Promise<void> {
       other.item.id === entry.item.id ? { ...other, owned: true } : other,
     )
   })
+  await focusCard(entry)
+}
+
+// The buy button that opened the dialog is disabled during the request and gone after a
+// purchase, so the focus would drop to <body>; the card keeps the player in place
+async function focusCard(entry: ShopItem): Promise<void> {
+  await nextTick()
+  goods.value?.querySelector<HTMLElement>(`[data-item-id="${entry.item.id}"]`)?.focus()
 }
 
 onMounted(() => Promise.all([loadShop(), markSeen()]))
@@ -92,7 +111,7 @@ onMounted(() => Promise.all([loadShop(), markSeen()]))
         <p data-testid="shop-gold">Золото: {{ character.gold }}</p>
       </aside>
 
-      <section class="card flex min-w-0 flex-1 flex-col gap-4" aria-label="Товары">
+      <section ref="goods" class="card flex min-w-0 flex-1 flex-col gap-4" aria-label="Товары">
         <h2 class="text-lg font-semibold">Товары</h2>
         <p v-if="loadError" class="text-sm text-danger" role="alert">{{ loadError }}</p>
         <p v-else-if="!loaded" class="text-slate-400">Загружаем магазин…</p>
@@ -114,5 +133,15 @@ onMounted(() => Promise.all([loadShop(), markSeen()]))
         </template>
       </section>
     </div>
+
+    <ConfirmDialog
+      v-if="pendingPurchase"
+      title="Купить предмет?"
+      :message="`«${pendingPurchase.item.name}» за ${pendingPurchase.item.price} золота. Потраченное золото не вернуть.`"
+      confirm-label="Купить"
+      :busy="submitting"
+      @confirm="confirmPurchase"
+      @cancel="pendingPurchase = null"
+    />
   </div>
 </template>

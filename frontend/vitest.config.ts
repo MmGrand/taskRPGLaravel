@@ -9,6 +9,7 @@ export default mergeConfig(
       environment: 'jsdom',
       exclude: [...configDefaults.exclude, 'e2e/**'],
       root: fileURLToPath(new URL('./', import.meta.url)),
+      setupFiles: ['./src/__tests__/setup.ts'],
       // Tests must not depend on a developer's local .env file (CI has none)
       env: { VITE_API_URL: 'http://localhost:8000/api' },
       coverage: {

@@ -22,10 +22,13 @@ const offer = computed(() => shopOffer(props.entry, props.gold))
 </script>
 
 <template>
+  <!-- tabindex -1: the shop moves the focus here after a purchase removes the buy button -->
   <article
-    class="flex flex-col items-center gap-1 rounded-lg border bg-ink p-2 text-center"
+    class="flex flex-col items-center gap-1 rounded-lg border bg-ink p-2 text-center outline-none focus-visible:ring-2 focus-visible:ring-accent"
     :class="offer.kind === 'locked' ? 'border-white/5' : 'border-white/10'"
     :aria-label="entry.item.name"
+    :data-item-id="entry.item.id"
+    tabindex="-1"
     data-testid="shop-item"
   >
     <!-- Decorative: the title below already names the item. A locked item dims only its icon,

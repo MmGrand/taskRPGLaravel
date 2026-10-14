@@ -4,7 +4,9 @@ import { mount } from '@vue/test-utils'
 import TaskItem from '../TaskItem.vue'
 import { dailyTaskFixture } from '@/api/__tests__/fixtures'
 import type { Task } from '@/api/types'
+import { answerDialog, confirmDialog as dialog, dialogButton } from '@/__tests__/confirmDialog'
 
+// The dialog buttons have text and no aria-label, so they never match the row buttons
 function mountItem(task: Task = dailyTaskFixture, disabled = false) {
   return mount(TaskItem, { props: { task, disabled }, attachTo: document.body })
 }
@@ -104,16 +106,55 @@ describe('TaskItem', () => {
     expect(wrapper.emitted('rename')).toBeUndefined()
   })
 
-  it('removes only after confirmation', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
+  it('asks before removing', async () => {
     const wrapper = mountItem()
-    const removeButton = wrapper.get('button[aria-label="Удалить"]')
 
-    await removeButton.trigger('click')
+    await wrapper.get('button[aria-label="Удалить"]').trigger('click')
+
+    expect(dialog(wrapper).text()).toContain('«30 минут Go» пропадёт из списка.')
     expect(wrapper.emitted('remove')).toBeUndefined()
+  })
 
-    await removeButton.trigger('click')
+  it('keeps the task when the player changes their mind', async () => {
+    const wrapper = mountItem()
+
+    await wrapper.get('button[aria-label="Удалить"]').trigger('click')
+    await answerDialog(wrapper, 'Отмена')
+
+    expect(dialog(wrapper).exists()).toBe(false)
+    expect(wrapper.emitted('remove')).toBeUndefined()
+  })
+
+  it('removes once confirmed', async () => {
+    const wrapper = mountItem()
+
+    await wrapper.get('button[aria-label="Удалить"]').trigger('click')
+    await answerDialog(wrapper, 'Удалить')
+
+    expect(dialog(wrapper).exists()).toBe(false)
     expect(wrapper.emitted('remove')).toHaveLength(1)
-    expect(confirm).toHaveBeenCalledWith('Удалить «30 минут Go»?')
+  })
+
+  it('holds the confirmation while another action of the list is running', async () => {
+    const wrapper = mountItem()
+    await wrapper.get('button[aria-label="Удалить"]').trigger('click')
+
+    await wrapper.setProps({ disabled: true })
+    expect(dialogButton(wrapper, 'Удалить').attributes('disabled')).toBeDefined()
+
+    await wrapper.setProps({ disabled: false })
+    await answerDialog(wrapper, 'Удалить')
+    expect(wrapper.emitted('remove')).toHaveLength(1)
+  })
+
+  it('draws the action icons and names the actions for screen readers', () => {
+    const wrapper = mountItem()
+
+    for (const label of ['Переименовать', 'Удалить']) {
+      const button = wrapper.get(`button[aria-label="${label}"]`)
+
+      expect(button.find('svg[aria-hidden="true"]').exists()).toBe(true)
+      expect(button.text()).toBe('')
+    }
   })
 })
