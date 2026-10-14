@@ -22,8 +22,25 @@ function signed(value: number): string {
   return value < 0 ? `−${Math.abs(value)}` : `+${value}`
 }
 
+export const REWARD_LIMIT_MESSAGE = 'Награды на сегодня закончились — задача всё равно засчитана.'
+
+// A part that did not change is left out: spent gold cannot be taken back, and "+0" would read as a gain
 export function formatReward(reward: Reward): string {
-  return `${signed(reward.xp)} XP · ${signed(reward.gold)} золота`
+  const parts = [
+    reward.xp === 0 ? '' : `${signed(reward.xp)} XP`,
+    reward.gold === 0 ? '' : `${signed(reward.gold)} золота`,
+  ]
+
+  return parts.filter((part) => part !== '').join(' · ')
+}
+
+// What the status line says; undoing a mark past the limit changed nothing, so formatReward gives ''
+export function describeReward(reward: Reward): string {
+  return reward.capped ? REWARD_LIMIT_MESSAGE : formatReward(reward)
+}
+
+export function isEmptyReward(reward: Reward): boolean {
+  return reward.xp === 0 && reward.gold === 0
 }
 
 // Share of the current level already earned, 0–100

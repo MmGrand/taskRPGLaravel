@@ -9,13 +9,16 @@ return [
     | Rewards
     |--------------------------------------------------------------------------
     |
-    | XP and gold one completed task gives before the streak bonus.
+    | XP and gold one completed task gives before the streak bonus. Only the
+    | first daily_limit completions of a user's day are rewarded; the rest
+    | still count as done and keep the streak, but give nothing.
     |
     */
 
     'rewards' => [
         'xp' => 10,
         'gold' => 5,
+        'daily_limit' => 10,
     ],
 
     /*

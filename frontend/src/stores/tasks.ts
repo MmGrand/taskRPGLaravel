@@ -9,7 +9,7 @@ import {
   renameTask,
   uncompleteTask,
 } from '@/api/tasks'
-import type { Character, CreateTaskPayload, Reward, Task } from '@/api/types'
+import type { Character, CompletionResult, CreateTaskPayload, Reward, Task } from '@/api/types'
 import { useAuthStore } from '@/stores/auth'
 
 export interface RewardNotice extends Reward {
@@ -42,25 +42,27 @@ export const useTasksStore = defineStore('tasks', () => {
     replace(await renameTask(id, title))
   }
 
-  // The answer also carries the updated hero, so XP, gold and streak change without another request
   async function setCompleted(id: number, completed: boolean): Promise<void> {
-    const auth = useAuthStore()
-    const levelBefore = auth.user?.character?.progress.level ?? null
+    const levelBefore = currentLevel()
     const result = await (completed ? completeTask(id) : uncompleteTask(id))
 
     replace(result.task)
+    apply(result, levelBefore)
 
-    if (result.character !== null) {
-      auth.setCharacter(result.character)
+    // A completion that changed nothing clears the line, so it never shows an earlier reward as its own
+    if (result.reward === null) {
+      lastReward.value = null
     }
-
-    lastReward.value =
-      result.reward === null ? null : notice(result.reward, levelBefore, result.character)
   }
 
+  // A task completed today gives its reward back on deletion, like an undo. Deleting any other task
+  // changed nothing, so the line about an earlier reward stays
   async function remove(id: number): Promise<void> {
-    await deleteTask(id)
+    const levelBefore = currentLevel()
+    const result = await deleteTask(id)
+
     tasks.value = tasks.value.filter((task) => task.id !== id)
+    apply(result, levelBefore)
   }
 
   // Forget the tasks on logout so the next user on this browser never sees them
@@ -72,6 +74,21 @@ export const useTasksStore = defineStore('tasks', () => {
 
   function replace(updated: Task): void {
     tasks.value = tasks.value.map((task) => (task.id === updated.id ? updated : task))
+  }
+
+  function currentLevel(): number | null {
+    return useAuthStore().user?.character?.progress.level ?? null
+  }
+
+  // The answer also carries the updated hero, so XP, gold and streak change without another request
+  function apply(result: CompletionResult, levelBefore: number | null): void {
+    if (result.character !== null) {
+      useAuthStore().setCharacter(result.character)
+    }
+
+    if (result.reward !== null) {
+      lastReward.value = notice(result.reward, levelBefore, result.character)
+    }
   }
 
   function notice(

@@ -11,7 +11,7 @@ import TaskList from '@/components/TaskList.vue'
 import { useFormSubmit } from '@/composables/useFormSubmit'
 import { useRefreshOnVisible } from '@/composables/useRefreshOnVisible'
 import { wornItems } from '@/game/equipment'
-import { formatReward } from '@/game/progression'
+import { describeReward, isEmptyReward } from '@/game/progression'
 import { formatUnlocked } from '@/game/shop'
 import { useAuthStore } from '@/stores/auth'
 import { useTasksStore } from '@/stores/tasks'
@@ -33,9 +33,11 @@ const rewardNotice = computed(() => {
     return ''
   }
 
-  const levelUp = reward.levelUp === null ? '' : ` · Новый уровень: ${reward.levelUp}!`
+  const text = describeReward(reward)
+  const levelUp =
+    reward.levelUp === null || text === '' ? '' : ` · Новый уровень: ${reward.levelUp}!`
 
-  return `${formatReward(reward)}${levelUp}`
+  return `${text}${levelUp}`
 })
 
 // The store keeps the last reward across pages; only one earned while this page is open celebrates,
@@ -43,6 +45,10 @@ const rewardNotice = computed(() => {
 const rewardBeforeMount = tasks.lastReward?.id ?? 0
 const freshReward = computed(() =>
   tasks.lastReward !== null && tasks.lastReward.id > rewardBeforeMount ? tasks.lastReward : null,
+)
+// Nothing floats when nothing was earned: past the daily limit the status line explains it instead
+const floatReward = computed(() =>
+  freshReward.value !== null && !isEmptyReward(freshReward.value) ? freshReward.value : null,
 )
 const levelUp = computed(() => freshReward.value?.levelUp ?? null)
 const hasNewItems = computed(() => (character.value?.shop.new_items.length ?? 0) > 0)
@@ -120,7 +126,7 @@ useRefreshOnVisible(refreshTasks)
         v-if="character"
         class="card relative flex flex-col items-center gap-4 md:sticky md:top-8 md:w-80 md:shrink-0"
       >
-        <RewardFloat v-if="freshReward" :key="freshReward.id" :notice="freshReward" />
+        <RewardFloat v-if="floatReward" :key="floatReward.id" :notice="floatReward" />
         <!-- A new level remounts the wrapper, so the glow plays again on every level up -->
         <div
           :key="levelUp === null ? 'hero' : `level-${freshReward?.id}`"

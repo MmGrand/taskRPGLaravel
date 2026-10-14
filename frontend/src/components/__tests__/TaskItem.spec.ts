@@ -115,6 +115,25 @@ describe('TaskItem', () => {
     expect(wrapper.emitted('remove')).toBeUndefined()
   })
 
+  it('warns that the reward of today goes back when a rewarded task is removed', async () => {
+    const wrapper = mountItem({ ...dailyTaskFixture, is_completed: true, rewarded_today: true })
+
+    await wrapper.get('button[aria-label="Удалить"]').trigger('click')
+
+    expect(dialog(wrapper).text()).toContain(
+      '«30 минут Go» пропадёт из списка. Награда за сегодня вернётся.',
+    )
+  })
+
+  // Done past the daily limit, or a todo done before midnight: nothing comes back
+  it('promises no refund for a completed task that gave nothing today', async () => {
+    const wrapper = mountItem({ ...dailyTaskFixture, is_completed: true, rewarded_today: false })
+
+    await wrapper.get('button[aria-label="Удалить"]').trigger('click')
+
+    expect(dialog(wrapper).text()).not.toContain('Награда за сегодня вернётся.')
+  })
+
   it('keeps the task when the player changes their mind', async () => {
     const wrapper = mountItem()
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref, useTemplateRef } from 'vue'
+import { computed, nextTick, ref, useTemplateRef } from 'vue'
 
 import type { Task } from '@/api/types'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -18,6 +18,11 @@ const emit = defineEmits<{
 const editing = ref(false)
 const draft = ref('')
 const confirmingRemoval = ref(false)
+// The server knows whether today's mark paid out: not past the daily limit, not for a todo done earlier
+const removalMessage = computed(
+  () =>
+    `«${props.task.title}» пропадёт из списка.${props.task.rewarded_today ? ' Награда за сегодня вернётся.' : ''}`,
+)
 const titleInput = useTemplateRef<HTMLInputElement>('titleInput')
 
 async function startEditing(): Promise<void> {
@@ -136,7 +141,7 @@ function confirmRemoval(): void {
     <ConfirmDialog
       v-if="confirmingRemoval"
       title="Удалить задачу?"
-      :message="`«${task.title}» пропадёт из списка.`"
+      :message="removalMessage"
       confirm-label="Удалить"
       :busy="disabled"
       @confirm="confirmRemoval"

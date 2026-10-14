@@ -82,6 +82,7 @@ export const dailyTaskFixture: Task = {
   title: '30 минут Go',
   type: 'daily',
   is_completed: false,
+  rewarded_today: false,
   completed_at: null,
   created_at: '2026-10-13T10:00:00+00:00',
 }
@@ -91,6 +92,7 @@ export const todoTaskFixture: Task = {
   title: 'Купить гантели',
   type: 'todo',
   is_completed: false,
+  rewarded_today: false,
   completed_at: null,
   created_at: '2026-10-13T10:05:00+00:00',
 }

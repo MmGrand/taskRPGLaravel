@@ -91,7 +91,7 @@ describe('isCompletionResponse', () => {
       isCompletionResponse({
         data: dailyTaskFixture,
         character: characterFixture,
-        reward: { xp: -10, gold: -5 },
+        reward: { xp: -10, gold: -5, capped: false },
       }),
     ).toBe(true)
     expect(isCompletionResponse({ data: dailyTaskFixture, character: null, reward: null })).toBe(
@@ -109,6 +109,23 @@ describe('isCompletionResponse', () => {
       }),
     ).toBe(false)
     expect(isCompletionResponse(null)).toBe(false)
+  })
+
+  it('rejects a task that does not say whether deleting it gives a reward back', () => {
+    const { rewarded_today: _rewarded, ...withoutFlag } = dailyTaskFixture
+
+    expect(isCompletionResponse({ data: withoutFlag, character: null, reward: null })).toBe(false)
+  })
+
+  // Without the flag a reward past the daily limit would read as a silent +0
+  it('rejects a reward that does not say whether the daily limit was reached', () => {
+    expect(
+      isCompletionResponse({
+        data: dailyTaskFixture,
+        character: null,
+        reward: { xp: 0, gold: 0 },
+      }),
+    ).toBe(false)
   })
 })
 

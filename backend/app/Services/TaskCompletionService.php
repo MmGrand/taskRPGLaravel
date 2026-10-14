@@ -10,6 +10,7 @@ use App\Models\Task;
 use App\Models\TaskCompletion;
 use App\ValueObjects\Reward;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 final class TaskCompletionService
@@ -33,9 +34,11 @@ final class TaskCompletionService
             }
 
             $character = $this->lockCharacter($task);
-            $reward = $character === null
-                ? Reward::none()
-                : $this->rewards->rewardFor($this->streaks->lengthIncludingToday($task->user));
+            $reward = match (true) {
+                $character === null => Reward::none(),
+                $this->rewardedOn($task, $today) >= config()->integer('progression.rewards.daily_limit') => Reward::capped(),
+                default => $this->rewards->rewardFor($this->streaks->lengthIncludingToday($task->user)),
+            };
 
             $task->completions()->create([
                 'period_date' => $today->toDateString(),
@@ -76,6 +79,18 @@ final class TaskCompletionService
         });
     }
 
+    // Deleting a task takes back today's mark like an undo, so create → complete → delete earns nothing.
+    // Earlier days stay in the history and keep the streak. Returns what was taken, or null
+    public function delete(Task $task): ?Reward
+    {
+        return DB::transaction(function () use ($task): ?Reward {
+            $taken = $this->undo($task);
+            $task->delete();
+
+            return $taken;
+        });
+    }
+
     // Serialises parallel requests for the same task; the completion row may not exist yet
     private function lock(Task $task): void
     {
@@ -86,6 +101,17 @@ final class TaskCompletionService
     private function lockCharacter(Task $task): ?Character
     {
         return Character::query()->where('user_id', $task->user_id)->lockForUpdate()->first();
+    }
+
+    // Counted under the character lock, so parallel completions of one user cannot both take the last slot.
+    // Deleted tasks count too: deletion undoes their mark of today, so only earlier days remain
+    private function rewardedOn(Task $task, CarbonImmutable $day): int
+    {
+        return TaskCompletion::query()
+            ->whereIn('task_id', Task::withTrashed()->where('user_id', $task->user_id)->select('id'))
+            ->where('period_date', $day->toDateString())
+            ->where(fn (Builder $query) => $query->where('xp_awarded', '>', 0)->orWhere('gold_awarded', '>', 0))
+            ->count();
     }
 
     // The completion that makes the task count as done today, if any

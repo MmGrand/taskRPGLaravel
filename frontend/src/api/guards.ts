@@ -79,7 +79,12 @@ function isStreak(value: unknown): value is Streak {
 }
 
 export function isReward(value: unknown): value is Reward {
-  return isRecord(value) && Number.isInteger(value.xp) && Number.isInteger(value.gold)
+  return (
+    isRecord(value) &&
+    Number.isInteger(value.xp) &&
+    Number.isInteger(value.gold) &&
+    typeof value.capped === 'boolean'
+  )
 }
 
 function isShopItem(value: unknown): value is ShopItem {
@@ -130,6 +135,7 @@ export function isTask(value: unknown): value is Task {
     typeof value.title === 'string' &&
     isOneOf(TASK_TYPES, value.type) &&
     typeof value.is_completed === 'boolean' &&
+    typeof value.rewarded_today === 'boolean' &&
     (value.completed_at === null || typeof value.completed_at === 'string') &&
     typeof value.created_at === 'string'
   )

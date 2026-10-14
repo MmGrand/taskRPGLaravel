@@ -8,6 +8,7 @@ use App\Enums\TaskType;
 use Carbon\CarbonImmutable;
 use Database\Factories\TaskFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -62,6 +63,29 @@ final class Task extends Model
         // Compare calendar dates: period_date is midnight in UTC, $day is midnight in the user's zone
         return $this->type === TaskType::Todo
             || $completion->period_date->toDateString() === $day->toDateString();
+    }
+
+    // Whether today's mark gave something, so undoing or deleting it would take a reward back
+    public function isRewardedOn(CarbonImmutable $day): bool
+    {
+        $completion = $this->latestCompletion;
+
+        return $completion !== null
+            && $completion->period_date->toDateString() === $day->toDateString()
+            && ($completion->xp_awarded > 0 || $completion->gold_awarded > 0);
+    }
+
+    /**
+     * Tasks the user still sees on the given day: todos completed on an earlier day drop off the list.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeActiveOn(Builder $query, CarbonImmutable $day): void
+    {
+        $query->where(fn (Builder $tasks) => $tasks
+            ->where('type', TaskType::Daily)
+            ->orWhereDoesntHave('completions', fn (Builder $completions) => $completions
+                ->where('period_date', '<', $day->toDateString())));
     }
 
     /**
