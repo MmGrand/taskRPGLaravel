@@ -58,6 +58,13 @@ body {
   @apply min-h-screen bg-ink text-slate-100 antialiased;
 }
 
+/* Tailwind 4 preflight gives buttons the default cursor; a game UI wants the hand back */
+@layer base {
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 @layer components {
   .card {
     @apply rounded-xl bg-panel p-6 shadow-lg;

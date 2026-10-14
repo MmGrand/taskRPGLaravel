@@ -16,6 +16,7 @@ import {
 import { buyItem, fetchShop, markShopSeen } from '@/api/shop'
 import type { Character, ShopItem } from '@/api/types'
 import { useAuthStore } from '@/stores/auth'
+import { answerDialog, confirmDialog as dialog } from '@/__tests__/confirmDialog'
 
 vi.mock('@/api/shop', () => ({
   fetchShop: vi.fn<typeof fetchShop>(),
@@ -47,7 +48,11 @@ async function mountView(character: Character = levelTwoHero) {
   await router.push('/shop')
   await router.isReady()
 
-  const wrapper = mount(ShopView, { global: { plugins: [pinia, router] } })
+  // Attached, so the focus after a purchase can be checked
+  const wrapper = mount(ShopView, {
+    global: { plugins: [pinia, router] },
+    attachTo: document.body,
+  })
   await flushPromises()
 
   return wrapper
@@ -90,28 +95,38 @@ describe('ShopView', () => {
   })
 
   it('buys a confirmed item and marks it as bought', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     vi.mocked(buyItem).mockResolvedValue({ ...levelTwoHero, gold: 10 })
     const wrapper = await mountView()
 
     await card(wrapper, 'Зелёная бандана').get('button').trigger('click')
-    await flushPromises()
+    expect(dialog(wrapper).text()).toContain('«Зелёная бандана» за 30 золота')
+    await answerDialog(wrapper, 'Купить')
 
-    expect(window.confirm).toHaveBeenCalledWith('Купить «Зелёная бандана» за 30 золота?')
+    expect(dialog(wrapper).exists()).toBe(false)
     expect(buyItem).toHaveBeenCalledWith(greenBandanaFixture.id)
     expect(wrapper.get('[data-testid="shop-gold"]').text()).toBe('Золото: 10')
     expect(card(wrapper, 'Зелёная бандана').text()).toContain('Куплено')
   })
 
+  // The buy button that opened the dialog is gone after the purchase, so the focus would drop to <body>
+  it('moves the focus to the card of the bought item', async () => {
+    vi.mocked(buyItem).mockResolvedValue({ ...levelTwoHero, gold: 10 })
+    const wrapper = await mountView()
+
+    await card(wrapper, 'Зелёная бандана').get('button').trigger('click')
+    await answerDialog(wrapper, 'Купить')
+
+    expect(document.activeElement).toBe(card(wrapper, 'Зелёная бандана').element)
+  })
+
   it('keeps the gold of a purchase that finished before the shop was marked as seen', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     let answerSeen: (character: Character) => void = () => {}
     vi.mocked(markShopSeen).mockReturnValue(new Promise((resolve) => (answerSeen = resolve)))
     vi.mocked(buyItem).mockResolvedValue({ ...levelTwoHero, gold: 10 })
     const wrapper = await mountView({ ...levelTwoHero, shop: { new_items: [greenBandanaFixture] } })
 
     await card(wrapper, 'Зелёная бандана').get('button').trigger('click')
-    await flushPromises()
+    await answerDialog(wrapper, 'Купить')
     // The answer still describes the hero before the purchase
     answerSeen({ ...levelTwoHero, gold: 40, shop: { new_items: [] } })
     await flushPromises()
@@ -121,25 +136,36 @@ describe('ShopView', () => {
   })
 
   it('buys nothing when the player changes their mind', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const wrapper = await mountView()
+
+    await card(wrapper, 'Зелёная бандана').get('button').trigger('click')
+    await answerDialog(wrapper, 'Отмена')
+
+    expect(buyItem).not.toHaveBeenCalled()
+    expect(dialog(wrapper).exists()).toBe(false)
+  })
+
+  it('waits for an answer before buying', async () => {
     const wrapper = await mountView()
 
     await card(wrapper, 'Зелёная бандана').get('button').trigger('click')
     await flushPromises()
 
+    expect(dialog(wrapper).exists()).toBe(true)
     expect(buyItem).not.toHaveBeenCalled()
   })
 
   it('shows why a purchase was refused', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     vi.mocked(buyItem).mockRejectedValue(
       axiosError(422, { errors: { item_id: ['Не хватает золота: нужно 30, есть 10.'] } }),
     )
     const wrapper = await mountView()
 
     await card(wrapper, 'Зелёная бандана').get('button').trigger('click')
-    await flushPromises()
+    await answerDialog(wrapper, 'Купить')
 
+    // The dialog is gone, so the reason is not hidden behind its backdrop
+    expect(dialog(wrapper).exists()).toBe(false)
     expect(wrapper.get('[role="alert"]').text()).toBe('Не хватает золота: нужно 30, есть 10.')
     expect(card(wrapper, 'Зелёная бандана').text()).toContain('Купить за 30')
   })

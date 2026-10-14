@@ -3,13 +3,6 @@ import type { ItemSlot } from '@/game/equipment'
 
 export type { Appearance, ItemSlot }
 
-export type CheckStatus = 'ok' | 'fail'
-
-export interface HealthData {
-  status: 'ok' | 'degraded'
-  checks: Record<string, CheckStatus>
-}
-
 export interface Item {
   id: number
   code: string
