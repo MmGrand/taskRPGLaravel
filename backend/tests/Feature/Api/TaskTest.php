@@ -72,6 +72,37 @@ it('refuses to create tasks over the limit', function () {
     $this->assertDatabaseCount('tasks', 2);
 });
 
+// A real race cannot be played in one process, so this keeps the order that prevents it: lock, then count
+it('locks the user row before counting tasks', function () {
+    // Arrange
+    DB::enableQueryLog();
+
+    // Act
+    $this->actingAs($this->user)->postJson('/api/tasks', ['title' => 'Первая', 'type' => 'todo'])->assertCreated();
+
+    // Assert
+    $queries = array_column(DB::getQueryLog(), 'query');
+    $lock = array_find_key($queries, fn (string $sql) => str_contains($sql, 'from "users"') && str_contains($sql, 'for update'));
+    $count = array_find_key($queries, fn (string $sql) => str_contains($sql, 'count(*)') && str_contains($sql, 'from "tasks"'));
+    expect($lock)->not->toBeNull()
+        ->and($count)->not->toBeNull()
+        ->and($lock)->toBeLessThan($count);
+});
+
+// Such todos drop off the list and cannot be deleted from it, so they must not block new tasks
+it('does not count todos finished on an earlier day towards the limit', function () {
+    // Arrange
+    config(['tasks.max_active_per_user' => 1]);
+    $done = Task::factory()->for($this->user)->todo()->create();
+    TaskCompletion::factory()->for($done)->on('2020-01-01')->create();
+
+    // Act
+    $response = $this->actingAs($this->user)->postJson('/api/tasks', ['title' => 'Новая', 'type' => 'todo']);
+
+    // Assert
+    $response->assertCreated();
+});
+
 it('does not count deleted tasks towards the limit', function () {
     // Arrange
     config(['tasks.max_active_per_user' => 2]);
@@ -156,8 +187,11 @@ it('soft deletes a task', function () {
     // Act
     $response = $this->actingAs($this->user)->deleteJson("/api/tasks/{$task->id}");
 
-    // Assert
-    $response->assertNoContent();
+    // Assert: the user of this file has no hero, so there is nobody to take a reward from
+    $response->assertOk()
+        ->assertJsonPath('data.id', $task->id)
+        ->assertJsonPath('character', null)
+        ->assertJsonPath('reward', null);
     $this->assertSoftDeleted($task);
     $this->actingAs($this->user)->deleteJson("/api/tasks/{$task->id}")->assertNotFound();
 });

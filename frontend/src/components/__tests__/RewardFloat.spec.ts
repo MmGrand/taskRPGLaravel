@@ -4,7 +4,7 @@ import { mount } from '@vue/test-utils'
 import RewardFloat from '../RewardFloat.vue'
 import type { RewardNotice } from '@/stores/tasks'
 
-const earned: RewardNotice = { xp: 20, gold: 10, levelUp: null, id: 1 }
+const earned: RewardNotice = { xp: 20, gold: 10, capped: false, levelUp: null, id: 1 }
 
 function mountFloat(notice: RewardNotice = earned) {
   return mount(RewardFloat, { props: { notice } })
@@ -29,7 +29,7 @@ describe('RewardFloat', () => {
   })
 
   it('greys out a taken back reward', () => {
-    const wrapper = mountFloat({ xp: -10, gold: -5, levelUp: null, id: 2 })
+    const wrapper = mountFloat({ xp: -10, gold: -5, capped: false, levelUp: null, id: 2 })
 
     expect(wrapper.get('[data-testid="reward-float"]').classes()).toContain('text-slate-400')
   })

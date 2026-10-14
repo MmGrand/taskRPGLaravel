@@ -68,30 +68,54 @@ describe('tasks api', () => {
     expect(patchMock).toHaveBeenCalledWith('/tasks/1', { title: 'Час Go' })
   })
 
-  it('deletes a task', async () => {
+  it('deletes a task, bringing the hero and the taken back reward along', async () => {
+    deleteMock.mockResolvedValue({
+      data: {
+        data: todoTaskFixture,
+        character: characterFixture,
+        reward: { xp: -10, gold: -5, capped: false },
+      },
+    })
+
+    await expect(deleteTask(2)).resolves.toEqual({
+      task: todoTaskFixture,
+      character: characterFixture,
+      reward: { xp: -10, gold: -5, capped: false },
+    })
+    expect(deleteMock).toHaveBeenCalledWith('/tasks/2')
+  })
+
+  it('rejects a delete answer without the task', async () => {
     deleteMock.mockResolvedValue({ data: '' })
 
-    await expect(deleteTask(2)).resolves.toBeUndefined()
-    expect(deleteMock).toHaveBeenCalledWith('/tasks/2')
+    await expect(deleteTask(2)).rejects.toThrow('Unexpected task completion response')
   })
 
   it('completes and uncompletes a task, bringing the hero and the reward along', async () => {
     putMock.mockResolvedValue({
-      data: { data: completedDaily, character: characterFixture, reward: { xp: 10, gold: 5 } },
+      data: {
+        data: completedDaily,
+        character: characterFixture,
+        reward: { xp: 10, gold: 5, capped: false },
+      },
     })
     deleteMock.mockResolvedValue({
-      data: { data: dailyTaskFixture, character: characterFixture, reward: { xp: -10, gold: -5 } },
+      data: {
+        data: dailyTaskFixture,
+        character: characterFixture,
+        reward: { xp: -10, gold: -5, capped: false },
+      },
     })
 
     await expect(completeTask(1)).resolves.toEqual({
       task: completedDaily,
       character: characterFixture,
-      reward: { xp: 10, gold: 5 },
+      reward: { xp: 10, gold: 5, capped: false },
     })
     await expect(uncompleteTask(1)).resolves.toEqual({
       task: dailyTaskFixture,
       character: characterFixture,
-      reward: { xp: -10, gold: -5 },
+      reward: { xp: -10, gold: -5, capped: false },
     })
     expect(putMock).toHaveBeenCalledWith('/tasks/1/completion')
     expect(deleteMock).toHaveBeenCalledWith('/tasks/1/completion')

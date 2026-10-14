@@ -22,13 +22,16 @@ final class TaskResource extends JsonResource
     {
         /** @var User $user */
         $user = $request->user();
-        $isCompleted = $this->isCompletedOn(app(UserCalendar::class)->today($user));
+        $today = app(UserCalendar::class)->today($user);
+        $isCompleted = $this->isCompletedOn($today);
 
         return [
             'id' => $this->id,
             'title' => $this->title,
             'type' => $this->type->value,
             'is_completed' => $isCompleted,
+            // Deleting the task gives this back; false past the daily limit and for a todo done earlier
+            'rewarded_today' => $this->isRewardedOn($today),
             'completed_at' => $isCompleted ? $this->latestCompletion?->completed_at->toIso8601String() : null,
             'created_at' => $this->created_at?->toIso8601String(),
         ];

@@ -99,7 +99,7 @@ it('levels up after two completions and can buy a new item', function () {
 
     // Assert
     expect($second->json('character.progress.level'))->toBe(5)
-        ->and($second->json('reward'))->toBe(['xp' => TODAY_XP, 'gold' => TODAY_GOLD]);
+        ->and($second->json('reward'))->toBe(['xp' => TODAY_XP, 'gold' => TODAY_GOLD, 'capped' => false]);
     $purchase->assertCreated();
 });
 

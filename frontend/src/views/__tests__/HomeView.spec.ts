@@ -111,7 +111,7 @@ describe('HomeView', () => {
         progress: { level: 2, xp_total: 55, xp_in_level: 5, xp_to_next_level: 141 },
         shop: { new_items: [greenBandanaFixture, goldenHelmetFixture] },
       },
-      reward: { xp: 10, gold: 5 },
+      reward: { xp: 10, gold: 5, capped: false },
     })
     const { wrapper } = await mountView()
 
@@ -131,7 +131,7 @@ describe('HomeView', () => {
     vi.mocked(completeTask).mockResolvedValue({
       task: { ...dailyTaskFixture, is_completed: true, completed_at: '2026-10-13T12:00:00+00:00' },
       character: waiting,
-      reward: { xp: 10, gold: 5 },
+      reward: { xp: 10, gold: 5, capped: false },
     })
     const { wrapper } = await mountView(waiting)
 
@@ -203,7 +203,7 @@ describe('HomeView', () => {
     vi.mocked(completeTask).mockResolvedValue({
       task: { ...dailyTaskFixture, is_completed: true, completed_at: '2026-10-13T12:00:00+00:00' },
       character: levelTwoHero,
-      reward: { xp: 10, gold: 5 },
+      reward: { xp: 10, gold: 5, capped: false },
     })
     const { wrapper } = await mountView()
 
@@ -216,6 +216,24 @@ describe('HomeView', () => {
     expect(wrapper.get('[data-testid="character-stats"]').text()).toContain('Уровень 2')
   })
 
+  it('tells that the rewards of the day are over instead of floating zeros', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([dailyTaskFixture])
+    vi.mocked(completeTask).mockResolvedValue({
+      task: { ...dailyTaskFixture, is_completed: true },
+      character: characterFixture,
+      reward: { xp: 0, gold: 0, capped: true },
+    })
+    const { wrapper } = await mountView()
+
+    await wrapper.get('input[type="checkbox"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="reward-notice"]').text()).toBe(
+      'Награды на сегодня закончились — задача всё равно засчитана.',
+    )
+    expect(wrapper.find('[data-testid="reward-float"]').exists()).toBe(false)
+  })
+
   it('floats the reward over the hero and celebrates only a level that rose', async () => {
     vi.mocked(fetchTasks).mockResolvedValue([dailyTaskFixture, todoTaskFixture])
     const levelTwoHero: Character = {
@@ -226,12 +244,12 @@ describe('HomeView', () => {
       .mockResolvedValueOnce({
         task: { ...dailyTaskFixture, is_completed: true },
         character: levelTwoHero,
-        reward: { xp: 10, gold: 5 },
+        reward: { xp: 10, gold: 5, capped: false },
       })
       .mockResolvedValueOnce({
         task: { ...todoTaskFixture, is_completed: true },
         character: levelTwoHero,
-        reward: { xp: 10, gold: 5 },
+        reward: { xp: 10, gold: 5, capped: false },
       })
     const { wrapper } = await mountView()
     const checkboxes = wrapper.findAll('input[type="checkbox"]')
@@ -261,7 +279,7 @@ describe('HomeView', () => {
     setActivePinia(pinia)
     useAuthStore().user = { ...userFixture, character: characterFixture }
     // A level up that happened before the player went to the shop and back
-    useTasksStore().lastReward = { xp: 20, gold: 10, levelUp: 5, id: 3 }
+    useTasksStore().lastReward = { xp: 20, gold: 10, capped: false, levelUp: 5, id: 3 }
     const router = makeTestRouter('home', HomeView)
     await router.push('/')
     await router.isReady()
@@ -285,7 +303,7 @@ describe('HomeView', () => {
     vi.mocked(uncompleteTask).mockResolvedValue({
       task: dailyTaskFixture,
       character: characterFixture,
-      reward: { xp: -10, gold: -5 },
+      reward: { xp: -10, gold: -5, capped: false },
     })
     const { wrapper } = await mountView()
 

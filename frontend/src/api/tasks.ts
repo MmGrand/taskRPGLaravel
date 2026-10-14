@@ -20,8 +20,11 @@ export async function renameTask(id: number, title: string): Promise<Task> {
   return unwrapData(response.data, isTask, 'task')
 }
 
-export async function deleteTask(id: number): Promise<void> {
-  await http.delete(`/tasks/${id}`)
+// Deleting a task completed today takes its reward back, so the answer looks like an undo
+export async function deleteTask(id: number): Promise<CompletionResult> {
+  const response = await http.delete<unknown>(`/tasks/${id}`)
+
+  return toCompletionResult(response.data)
 }
 
 export async function completeTask(id: number): Promise<CompletionResult> {

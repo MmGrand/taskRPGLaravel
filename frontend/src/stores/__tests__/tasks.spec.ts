@@ -98,43 +98,63 @@ describe('tasks store', () => {
     const auth = useAuthStore()
     auth.user = { ...userFixture, character: characterFixture }
     const rewarded = { ...characterFixture, gold: 5 }
-    vi.mocked(completeTask).mockResolvedValue(result(completedDaily, rewarded, { xp: 10, gold: 5 }))
+    vi.mocked(completeTask).mockResolvedValue(
+      result(completedDaily, rewarded, { xp: 10, gold: 5, capped: false }),
+    )
 
     await store.setCompleted(1, true)
 
     expect(auth.user?.character).toEqual(rewarded)
-    expect(store.lastReward).toEqual({ xp: 10, gold: 5, levelUp: null, id: expect.any(Number) })
+    expect(store.lastReward).toEqual({
+      xp: 10,
+      gold: 5,
+      capped: false,
+      levelUp: null,
+      id: expect.any(Number),
+    })
   })
 
   it('announces the new level when a completion raises it', async () => {
     const store = await loadedStore()
     useAuthStore().user = { ...userFixture, character: characterFixture }
     vi.mocked(completeTask).mockResolvedValue(
-      result(completedDaily, levelTwoHero, { xp: 10, gold: 5 }),
+      result(completedDaily, levelTwoHero, { xp: 10, gold: 5, capped: false }),
     )
 
     await store.setCompleted(1, true)
 
-    expect(store.lastReward).toEqual({ xp: 10, gold: 5, levelUp: 2, id: expect.any(Number) })
+    expect(store.lastReward).toEqual({
+      xp: 10,
+      gold: 5,
+      capped: false,
+      levelUp: 2,
+      id: expect.any(Number),
+    })
   })
 
   it('shows a taken back reward without a level up', async () => {
     const store = await loadedStore()
     useAuthStore().user = { ...userFixture, character: levelTwoHero }
     vi.mocked(uncompleteTask).mockResolvedValue(
-      result(dailyTaskFixture, characterFixture, { xp: -10, gold: -5 }),
+      result(dailyTaskFixture, characterFixture, { xp: -10, gold: -5, capped: false }),
     )
 
     await store.setCompleted(1, false)
 
-    expect(store.lastReward).toEqual({ xp: -10, gold: -5, levelUp: null, id: expect.any(Number) })
+    expect(store.lastReward).toEqual({
+      xp: -10,
+      gold: -5,
+      capped: false,
+      levelUp: null,
+      id: expect.any(Number),
+    })
   })
 
   it('gives every reward a new id, so the same numbers twice still read as two rewards', async () => {
     const store = await loadedStore()
     useAuthStore().user = { ...userFixture, character: characterFixture }
     vi.mocked(completeTask).mockResolvedValue(
-      result(completedDaily, characterFixture, { xp: 10, gold: 5 }),
+      result(completedDaily, characterFixture, { xp: 10, gold: 5, capped: false }),
     )
 
     await store.setCompleted(1, true)
@@ -148,7 +168,9 @@ describe('tasks store', () => {
     const store = await loadedStore()
     const auth = useAuthStore()
     auth.user = { ...userFixture, character: null }
-    vi.mocked(completeTask).mockResolvedValueOnce(result(completedDaily, null, { xp: 0, gold: 0 }))
+    vi.mocked(completeTask).mockResolvedValueOnce(
+      result(completedDaily, null, { xp: 0, gold: 0, capped: false }),
+    )
     await store.setCompleted(1, true)
     vi.mocked(completeTask).mockResolvedValueOnce(result(completedDaily, null, null))
 
@@ -168,13 +190,42 @@ describe('tasks store', () => {
     expect(store.dailies[0]?.title).toBe('Час Go')
   })
 
+  it('keeps the reward line when a deleted task gave nothing back', async () => {
+    const store = await loadedStore()
+    useAuthStore().user = { ...userFixture, character: characterFixture }
+    vi.mocked(completeTask).mockResolvedValue(
+      result(completedDaily, levelTwoHero, { xp: 10, gold: 5, capped: false }),
+    )
+    vi.mocked(deleteTask).mockResolvedValue(result(todoTaskFixture, levelTwoHero, null))
+    await store.setCompleted(1, true)
+
+    await store.remove(2)
+
+    expect(store.lastReward).toMatchObject({ xp: 10, gold: 5, levelUp: 2 })
+  })
+
   it('removes a deleted task', async () => {
     const store = await loadedStore()
-    vi.mocked(deleteTask).mockResolvedValue()
+    vi.mocked(deleteTask).mockResolvedValue(result(todoTaskFixture, null, null))
 
     await store.remove(2)
 
     expect(store.todos).toEqual([])
+    expect(store.lastReward).toBeNull()
+  })
+
+  it('takes the reward of a task completed today back when it is deleted', async () => {
+    const store = await loadedStore()
+    useAuthStore().user = { ...userFixture, character: levelTwoHero }
+    vi.mocked(deleteTask).mockResolvedValue(
+      result(dailyTaskFixture, characterFixture, { xp: -10, gold: -5, capped: false }),
+    )
+
+    await store.remove(1)
+
+    expect(store.dailies).toEqual([])
+    expect(useAuthStore().user?.character).toEqual(characterFixture)
+    expect(store.lastReward).toMatchObject({ xp: -10, gold: -5, levelUp: null })
   })
 
   it('keeps the list when an action fails', async () => {
@@ -188,7 +239,7 @@ describe('tasks store', () => {
   it('forgets everything on reset', async () => {
     const store = await loadedStore()
     vi.mocked(completeTask).mockResolvedValue(
-      result(completedDaily, characterFixture, { xp: 10, gold: 5 }),
+      result(completedDaily, characterFixture, { xp: 10, gold: 5, capped: false }),
     )
     await store.setCompleted(1, true)
 

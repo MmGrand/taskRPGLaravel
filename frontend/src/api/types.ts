@@ -45,6 +45,8 @@ export interface Streak {
 export interface Reward {
   xp: number
   gold: number
+  // The daily limit was reached: the task counts but gives nothing
+  capped: boolean
 }
 
 export interface Character {
@@ -92,6 +94,8 @@ export interface Task {
   title: string
   type: TaskType
   is_completed: boolean
+  // Deleting the task gives a reward back: false past the daily limit or for a todo done earlier
+  rewarded_today: boolean
   completed_at: string | null
   created_at: string
 }
