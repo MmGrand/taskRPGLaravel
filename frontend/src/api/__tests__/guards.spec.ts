@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { isCharacter, isCompletionResponse, isInventory, isUser, unwrapData } from '../guards'
+import {
+  isCharacter,
+  isCompletionResponse,
+  isInventory,
+  isTask,
+  isUser,
+  unwrapData,
+} from '../guards'
 import {
   characterFixture,
   dailyTaskFixture,
@@ -115,6 +122,34 @@ describe('isCompletionResponse', () => {
     const { rewarded_today: _rewarded, ...withoutFlag } = dailyTaskFixture
 
     expect(isCompletionResponse({ data: withoutFlag, character: null, reward: null })).toBe(false)
+  })
+})
+
+describe('isTask', () => {
+  it('accepts a daily with a difficulty and a schedule', () => {
+    expect(
+      isTask({
+        ...dailyTaskFixture,
+        difficulty: 'hard',
+        weekdays: [1, 3, 5],
+        scheduled_today: false,
+      }),
+    ).toBe(true)
+  })
+
+  it('rejects a task without the fields of the schedule and the difficulty', () => {
+    const { difficulty: _difficulty, ...withoutDifficulty } = dailyTaskFixture
+    const { scheduled_today: _scheduled, ...withoutScheduled } = dailyTaskFixture
+
+    expect(isTask(withoutDifficulty)).toBe(false)
+    expect(isTask(withoutScheduled)).toBe(false)
+    expect(isTask({ ...dailyTaskFixture, difficulty: 'epic' })).toBe(false)
+  })
+
+  it('rejects weekdays outside Monday to Sunday', () => {
+    for (const weekdays of [[0], [8], [1.5], ['пн'], 'пн']) {
+      expect(isTask({ ...dailyTaskFixture, weekdays })).toBe(false)
+    }
   })
 
   // Without the flag a reward past the daily limit would read as a silent +0

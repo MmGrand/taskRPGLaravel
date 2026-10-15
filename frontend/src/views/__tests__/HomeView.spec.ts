@@ -20,8 +20,9 @@ import {
   createTask,
   deleteTask,
   fetchTasks,
-  renameTask,
+  saveTaskOrder,
   uncompleteTask,
+  updateTask,
 } from '@/api/tasks'
 import { useAuthStore } from '@/stores/auth'
 import { useTasksStore } from '@/stores/tasks'
@@ -35,7 +36,8 @@ vi.mock('@/api/auth', () => ({
 vi.mock('@/api/tasks', () => ({
   fetchTasks: vi.fn<typeof fetchTasks>(),
   createTask: vi.fn<typeof createTask>(),
-  renameTask: vi.fn<typeof renameTask>(),
+  updateTask: vi.fn<typeof updateTask>(),
+  saveTaskOrder: vi.fn<typeof saveTaskOrder>(),
   deleteTask: vi.fn<typeof deleteTask>(),
   completeTask: vi.fn<typeof completeTask>(),
   uncompleteTask: vi.fn<typeof uncompleteTask>(),
@@ -73,6 +75,48 @@ describe('HomeView', () => {
     expect(wrapper.text()).toContain(characterFixture.name)
     expect(wrapper.get('section[aria-label="Ежедневные"]').text()).toContain('30 минут Go')
     expect(wrapper.get('section[aria-label="Разовые"]').text()).toContain('Купить гантели')
+  })
+
+  it('welcomes a player without tasks and hides the welcome once there are some', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([])
+    const empty = await mountView()
+    expect(empty.wrapper.text()).toContain('С чего начать')
+    empty.wrapper.unmount()
+
+    vi.mocked(fetchTasks).mockResolvedValue([dailyTaskFixture])
+    const { wrapper } = await mountView()
+
+    expect(wrapper.text()).not.toContain('С чего начать')
+  })
+
+  it('tells a new player what a checkbox gives', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([dailyTaskFixture])
+
+    const { wrapper } = await mountView()
+
+    expect(wrapper.get('[data-testid="reward-notice"]').text()).toBe(
+      'Отметь задачу — получишь первую награду.',
+    )
+  })
+
+  it('gives no tick hint when nothing can be ticked today', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([{ ...dailyTaskFixture, scheduled_today: false }])
+
+    const { wrapper } = await mountView()
+
+    expect(wrapper.get('[data-testid="reward-notice"]').text()).toBe('')
+  })
+
+  it('puts the dailies off their schedule today apart', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([
+      dailyTaskFixture,
+      { ...dailyTaskFixture, id: 5, title: 'Бассейн', scheduled_today: false },
+    ])
+
+    const { wrapper } = await mountView()
+
+    expect(wrapper.get('[data-testid="later-tasks"]').text()).toContain('Бассейн')
+    expect(wrapper.get('[data-testid="task-progress"]').text()).toBe('0 / 1')
   })
 
   it('links to the equipment page', async () => {
@@ -115,7 +159,7 @@ describe('HomeView', () => {
     })
     const { wrapper } = await mountView()
 
-    await wrapper.get('input[type="checkbox"]').trigger('click')
+    await wrapper.get('input[aria-label^="Выполнено"]').trigger('click')
     await flushPromises()
 
     const notice = wrapper.get('[data-testid="reward-notice"]')
@@ -135,7 +179,7 @@ describe('HomeView', () => {
     })
     const { wrapper } = await mountView(waiting)
 
-    await wrapper.get('input[type="checkbox"]').trigger('click')
+    await wrapper.get('input[aria-label^="Выполнено"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[data-testid="reward-notice"]').text()).toBe('+10 XP · +5 золота')
@@ -207,7 +251,7 @@ describe('HomeView', () => {
     })
     const { wrapper } = await mountView()
 
-    await wrapper.get('input[type="checkbox"]').trigger('click')
+    await wrapper.get('input[aria-label^="Выполнено"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[data-testid="reward-notice"]').text()).toBe(
@@ -225,7 +269,7 @@ describe('HomeView', () => {
     })
     const { wrapper } = await mountView()
 
-    await wrapper.get('input[type="checkbox"]').trigger('click')
+    await wrapper.get('input[aria-label^="Выполнено"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[data-testid="reward-notice"]').text()).toBe(
@@ -252,7 +296,7 @@ describe('HomeView', () => {
         reward: { xp: 10, gold: 5, capped: false },
       })
     const { wrapper } = await mountView()
-    const checkboxes = wrapper.findAll('input[type="checkbox"]')
+    const checkboxes = wrapper.findAll('input[aria-label^="Выполнено"]')
 
     await checkboxes[0]?.trigger('click')
     await flushPromises()
@@ -307,7 +351,7 @@ describe('HomeView', () => {
     })
     const { wrapper } = await mountView()
 
-    await wrapper.get('input[type="checkbox"]').trigger('click')
+    await wrapper.get('input[aria-label^="Выполнено"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[data-testid="reward-notice"]').text()).toBe('−10 XP · −5 золота')

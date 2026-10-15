@@ -6,6 +6,7 @@ namespace Tests\Feature\Api\Reward;
 
 // The namespace keeps this file's helper functions apart from those of other test files
 
+use App\Enums\TaskDifficulty;
 use App\Models\Character;
 use App\Models\Task;
 use App\Models\TaskCompletion;
@@ -321,6 +322,48 @@ it('keeps the reward of a todo completed on an earlier day when it is deleted', 
     $response->assertOk()->assertJsonPath('reward', null);
     expect($this->character->fresh())->xp->toBe(10)->gold->toBe(5);
     $this->assertDatabaseHas('task_completions', ['task_id' => $todo->id]);
+});
+
+it('scales the reward by the difficulty of the task', function (TaskDifficulty $difficulty, int $xp, int $gold) {
+    // Arrange
+    $task = Task::factory()->for($this->user)->daily()->difficulty($difficulty)->create();
+
+    // Act
+    $response = $this->actingAs($this->user)->putJson(completionUrl($task));
+
+    // Assert
+    $response->assertOk()->assertJsonPath('reward', ['xp' => $xp, 'gold' => $gold, 'capped' => false]);
+})->with([
+    'easy' => [TaskDifficulty::Easy, 5, 2],
+    'medium' => [TaskDifficulty::Medium, 10, 5],
+    'hard' => [TaskDifficulty::Hard, 20, 10],
+]);
+
+it('gives more XP for a hard task than for an easy one', function () {
+    // Arrange
+    $easy = Task::factory()->for($this->user)->daily()->difficulty(TaskDifficulty::Easy)->create();
+    $hard = Task::factory()->for($this->user)->daily()->difficulty(TaskDifficulty::Hard)->create();
+
+    // Act
+    $afterEasy = $this->actingAs($this->user)->putJson(completionUrl($easy))->json('character.progress.xp_total');
+    $afterHard = $this->actingAs($this->user)->putJson(completionUrl($hard))->json('character.progress.xp_total');
+
+    // Assert
+    expect($afterHard - $afterEasy)->toBeGreaterThan($afterEasy);
+});
+
+it('takes back what a completion gave even after the difficulty changed', function () {
+    // Arrange
+    $task = Task::factory()->for($this->user)->daily()->difficulty(TaskDifficulty::Hard)->create();
+    $this->actingAs($this->user)->putJson(completionUrl($task))->assertOk();
+    $this->actingAs($this->user)->patchJson(taskUrl($task), ['difficulty' => 'easy'])->assertOk();
+
+    // Act
+    $response = $this->actingAs($this->user)->deleteJson(completionUrl($task));
+
+    // Assert
+    $response->assertOk()->assertJsonPath('reward', ['xp' => -20, 'gold' => -10, 'capped' => false]);
+    expect($this->character->fresh())->xp->toBe(0)->gold->toBe(0);
 });
 
 it('rewards nothing for the create, complete and delete loop', function () {

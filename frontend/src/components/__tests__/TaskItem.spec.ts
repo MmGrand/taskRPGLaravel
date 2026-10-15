@@ -1,14 +1,26 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 
 import TaskItem from '../TaskItem.vue'
 import { dailyTaskFixture } from '@/api/__tests__/fixtures'
-import type { Task } from '@/api/types'
+import type { Task, UpdateTaskPayload } from '@/api/types'
 import { answerDialog, confirmDialog as dialog, dialogButton } from '@/__tests__/confirmDialog'
 
 // The dialog buttons have text and no aria-label, so they never match the row buttons
-function mountItem(task: Task = dailyTaskFixture, disabled = false) {
-  return mount(TaskItem, { props: { task, disabled }, attachTo: document.body })
+function mountItem(
+  task: Task = dailyTaskFixture,
+  disabled = false,
+  draggable = false,
+  save = vi.fn<(payload: UpdateTaskPayload) => Promise<boolean>>().mockResolvedValue(true),
+) {
+  return mount(TaskItem, {
+    props: { task, disabled, draggable, save },
+    attachTo: document.body,
+  })
+}
+
+function editDialog(wrapper: ReturnType<typeof mountItem>) {
+  return wrapper.find('[data-testid="task-edit-dialog"]')
 }
 
 describe('TaskItem', () => {
@@ -38,7 +50,7 @@ describe('TaskItem', () => {
   })
 
   it('disables every action while busy', () => {
-    const wrapper = mountItem(dailyTaskFixture, true)
+    const wrapper = mountItem(dailyTaskFixture, true, true)
 
     expect(
       wrapper
@@ -47,63 +59,87 @@ describe('TaskItem', () => {
     ).toBe(true)
   })
 
-  it('renames once on Enter even though blur follows', async () => {
-    const wrapper = mountItem()
-    await wrapper.get('button[aria-label="Переименовать"]').trigger('click')
-    const input = wrapper.get<HTMLInputElement>('input[aria-label="Новое название"]')
+  it('shows the difficulty and the days, but not the usual ones', () => {
+    const marked = mountItem({ ...dailyTaskFixture, difficulty: 'hard', weekdays: [1, 3, 5] })
+    const plain = mountItem()
 
-    await input.setValue('  Час Go ')
-    await input.trigger('keydown', { key: 'Enter' })
-    await input.trigger('blur')
-
-    expect(wrapper.emitted('rename')).toEqual([['Час Go']])
-    expect(wrapper.find('input[aria-label="Новое название"]').exists()).toBe(false)
+    expect(marked.get('[data-testid="task-details"]').text()).toBe('тяжёлая · пн, ср, пт')
+    expect(plain.find('[data-testid="task-details"]').exists()).toBe(false)
   })
 
-  it('keeps the draft while another action of the list is running', async () => {
-    const wrapper = mountItem()
-    await wrapper.get('button[aria-label="Переименовать"]').trigger('click')
-    const input = wrapper.get('input[aria-label="Новое название"]')
-    await input.setValue('Час Go')
+  it('hides the checkbox of a daily off its schedule', () => {
+    const wrapper = mountItem({ ...dailyTaskFixture, scheduled_today: false })
 
-    await wrapper.setProps({ disabled: true })
-    await input.trigger('keydown', { key: 'Enter' })
-    await input.trigger('blur')
-
-    expect(wrapper.emitted('rename')).toBeUndefined()
-    expect(wrapper.get<HTMLInputElement>('input[aria-label="Новое название"]').element.value).toBe(
-      'Час Go',
-    )
-
-    await wrapper.setProps({ disabled: false })
-    await wrapper.get('input[aria-label="Новое название"]').trigger('keydown', { key: 'Enter' })
-
-    expect(wrapper.emitted('rename')).toEqual([['Час Go']])
+    expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false)
+    expect(wrapper.get('li').classes()).toContain('opacity-60')
   })
 
-  it('cancels renaming on Escape', async () => {
-    const wrapper = mountItem()
-    await wrapper.get('button[aria-label="Переименовать"]').trigger('click')
-    const input = wrapper.get('input[aria-label="Новое название"]')
+  it('keeps the checkbox of a daily done today before its day left the schedule', () => {
+    const wrapper = mountItem({ ...dailyTaskFixture, scheduled_today: false, is_completed: true })
 
-    await input.setValue('Час Go')
-    await input.trigger('keydown', { key: 'Escape' })
-
-    expect(wrapper.emitted('rename')).toBeUndefined()
-    expect(wrapper.text()).toContain('30 минут Go')
+    expect(wrapper.find('input[type="checkbox"]').exists()).toBe(true)
   })
 
-  it('does not rename to an empty or unchanged title', async () => {
+  it('edits the task in a dialog and closes it once saved', async () => {
+    const save = vi.fn<(payload: UpdateTaskPayload) => Promise<boolean>>().mockResolvedValue(true)
+    const wrapper = mountItem(dailyTaskFixture, false, false, save)
+
+    await wrapper.get('button[aria-label="Изменить"]').trigger('click')
+    await editDialog(wrapper).get('input[name="edit-title"]').setValue('Час Go')
+    await editDialog(wrapper).get('form').trigger('submit')
+    await flushPromises()
+
+    expect(save).toHaveBeenCalledWith({ title: 'Час Go' })
+    expect(editDialog(wrapper).exists()).toBe(false)
+  })
+
+  it('keeps the dialog and the entered changes when the server refuses them', async () => {
+    const save = vi.fn<(payload: UpdateTaskPayload) => Promise<boolean>>().mockResolvedValue(false)
+    const wrapper = mountItem(dailyTaskFixture, false, false, save)
+
+    await wrapper.get('button[aria-label="Изменить"]').trigger('click')
+    await editDialog(wrapper).get('input[name="edit-title"]').setValue('Слишком длинное')
+    await editDialog(wrapper).get('form').trigger('submit')
+    await flushPromises()
+    await wrapper.setProps({ errors: { title: ['Не больше 120 символов.'] } })
+
+    expect(
+      editDialog(wrapper).get<HTMLInputElement>('input[name="edit-title"]').element.value,
+    ).toBe('Слишком длинное')
+    expect(editDialog(wrapper).get('[role="alert"]').text()).toBe('Не больше 120 символов.')
+  })
+
+  it('does not show errors of other actions in a dialog that has not saved yet', async () => {
+    const wrapper = mountItem()
+    await wrapper.setProps({ errors: { title: ['Чужая ошибка'] }, generalError: 'Сеть' })
+
+    await wrapper.get('button[aria-label="Изменить"]').trigger('click')
+
+    expect(editDialog(wrapper).find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('closes the dialog without changes on cancel', async () => {
     const wrapper = mountItem()
 
-    for (const draft of ['   ', '30 минут Go']) {
-      await wrapper.get('button[aria-label="Переименовать"]').trigger('click')
-      const input = wrapper.get('input[aria-label="Новое название"]')
-      await input.setValue(draft)
-      await input.trigger('keydown', { key: 'Enter' })
-    }
+    await wrapper.get('button[aria-label="Изменить"]').trigger('click')
+    await editDialog(wrapper).trigger('cancel')
 
-    expect(wrapper.emitted('rename')).toBeUndefined()
+    expect(editDialog(wrapper).exists()).toBe(false)
+  })
+
+  it('draws no handle unless the row can be dragged', () => {
+    expect(mountItem().find('.drag-handle').exists()).toBe(false)
+    expect(mountItem(dailyTaskFixture, false, true).find('.drag-handle').exists()).toBe(true)
+  })
+
+  it('moves with the arrow keys on the handle', async () => {
+    const wrapper = mountItem(dailyTaskFixture, false, true)
+    const handle = wrapper.get('button[aria-label="Переместить «30 минут Go»"]')
+
+    await handle.trigger('keydown', { key: 'ArrowDown' })
+    await handle.trigger('keydown', { key: 'ArrowUp' })
+
+    expect(wrapper.emitted('move')).toEqual([[1], [-1]])
   })
 
   it('asks before removing', async () => {
@@ -167,9 +203,9 @@ describe('TaskItem', () => {
   })
 
   it('draws the action icons and names the actions for screen readers', () => {
-    const wrapper = mountItem()
+    const wrapper = mountItem(dailyTaskFixture, false, true)
 
-    for (const label of ['Переименовать', 'Удалить']) {
+    for (const label of ['Изменить', 'Удалить', 'Переместить «30 минут Go»']) {
       const button = wrapper.get(`button[aria-label="${label}"]`)
 
       expect(button.find('svg[aria-hidden="true"]').exists()).toBe(true)

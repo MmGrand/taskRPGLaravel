@@ -6,10 +6,18 @@ import {
   createTask,
   deleteTask,
   fetchTasks,
-  renameTask,
+  saveTaskOrder,
   uncompleteTask,
+  updateTask,
 } from '@/api/tasks'
-import type { Character, CompletionResult, CreateTaskPayload, Reward, Task } from '@/api/types'
+import type {
+  Character,
+  CompletionResult,
+  CreateTaskPayload,
+  Reward,
+  Task,
+  UpdateTaskPayload,
+} from '@/api/types'
 import { useAuthStore } from '@/stores/auth'
 
 export interface RewardNotice extends Reward {
@@ -27,6 +35,13 @@ export const useTasksStore = defineStore('tasks', () => {
 
   const dailies = computed(() => tasks.value.filter((task) => task.type === 'daily'))
   const todos = computed(() => tasks.value.filter((task) => task.type === 'todo'))
+  // Due today, or already done today after its day left the schedule
+  const dailiesToday = computed(() =>
+    dailies.value.filter((task) => task.scheduled_today || task.is_completed),
+  )
+  const dailiesLater = computed(() =>
+    dailies.value.filter((task) => !task.scheduled_today && !task.is_completed),
+  )
 
   async function load(): Promise<void> {
     tasks.value = await fetchTasks()
@@ -38,8 +53,28 @@ export const useTasksStore = defineStore('tasks', () => {
     tasks.value = [...tasks.value, task]
   }
 
-  async function rename(id: number, title: string): Promise<void> {
-    replace(await renameTask(id, title))
+  async function update(id: number, payload: UpdateTaskPayload): Promise<void> {
+    replace(await updateTask(id, payload))
+  }
+
+  // ids: one list in its new order. Those tasks swap places among themselves, the others stay put.
+  // The new order shows at once; a failed save reloads what the server has
+  async function reorder(ids: readonly number[]): Promise<void> {
+    const byId = new Map(tasks.value.map((task) => [task.id, task]))
+    const moved = ids.flatMap((id) => byId.get(id) ?? [])
+    let next = 0
+    tasks.value = tasks.value.map((task) =>
+      ids.includes(task.id) ? (moved[next++] ?? task) : task,
+    )
+
+    try {
+      // Only this list: the server swaps these tasks among their own places, so a crossing save
+      // of the other list cannot undo this one
+      await saveTaskOrder(ids)
+    } catch (error) {
+      await load()
+      throw error
+    }
   }
 
   async function setCompleted(id: number, completed: boolean): Promise<void> {
@@ -109,10 +144,13 @@ export const useTasksStore = defineStore('tasks', () => {
     loaded,
     lastReward,
     dailies,
+    dailiesToday,
+    dailiesLater,
     todos,
     load,
     add,
-    rename,
+    update,
+    reorder,
     setCompleted,
     remove,
     reset,

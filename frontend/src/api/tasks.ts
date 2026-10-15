@@ -1,6 +1,6 @@
 import { isCompletionResponse, isTask, isTaskList, unwrapData } from './guards'
 import { http } from './http'
-import type { CompletionResult, CreateTaskPayload, Task } from './types'
+import type { CompletionResult, CreateTaskPayload, Task, UpdateTaskPayload } from './types'
 
 export async function fetchTasks(): Promise<Task[]> {
   const response = await http.get<unknown>('/tasks')
@@ -14,10 +14,15 @@ export async function createTask(payload: CreateTaskPayload): Promise<Task> {
   return unwrapData(response.data, isTask, 'task')
 }
 
-export async function renameTask(id: number, title: string): Promise<Task> {
-  const response = await http.patch<unknown>(`/tasks/${id}`, { title })
+export async function updateTask(id: number, payload: UpdateTaskPayload): Promise<Task> {
+  const response = await http.patch<unknown>(`/tasks/${id}`, payload)
 
   return unwrapData(response.data, isTask, 'task')
+}
+
+// One list in its new order: these tasks swap places among themselves, all others keep theirs
+export async function saveTaskOrder(ids: readonly number[]): Promise<void> {
+  await http.put('/tasks/order', { ids })
 }
 
 // Deleting a task completed today takes its reward back, so the answer looks like an undo

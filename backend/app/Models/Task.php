@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\WeekdaysCast;
+use App\Enums\TaskDifficulty;
 use App\Enums\TaskType;
+use App\ValueObjects\Weekdays;
 use Carbon\CarbonImmutable;
 use Database\Factories\TaskFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -18,14 +21,35 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property TaskType $type
+ * @property TaskDifficulty $difficulty
+ * @property Weekdays $weekdays
+ * @property int $position
  * @property-read User $user
  * @property-read TaskCompletion|null $latestCompletion
  */
-#[Fillable(['title', 'type'])]
+#[Fillable(['title', 'type', 'difficulty', 'weekdays'])]
 final class Task extends Model
 {
     /** @use HasFactory<TaskFactory> */
     use HasFactory, SoftDeletes;
+
+    // Mirrors the column defaults, so a just created task knows them without a reload
+    protected $attributes = [
+        'difficulty' => 'medium',
+        'weekdays' => Weekdays::EVERY_DAY_MASK,
+        'position' => 0,
+    ];
+
+    // Every way of creating a task puts it last, so no caller has to know about positions.
+    // TaskController::store holds the user row lock around it, so parallel creations get different places
+    protected static function booted(): void
+    {
+        self::creating(function (Task $task): void {
+            if ($task->position === 0) {
+                $task->position = (int) self::withTrashed()->where('user_id', $task->user_id)->max('position') + 1;
+            }
+        });
+    }
 
     /**
      * @return BelongsTo<User, $this>
@@ -65,6 +89,12 @@ final class Task extends Model
             || $completion->period_date->toDateString() === $day->toDateString();
     }
 
+    // A todo has no schedule; a daily is due only on its weekdays
+    public function isScheduledOn(CarbonImmutable $day): bool
+    {
+        return $this->type === TaskType::Todo || $this->weekdays->includes($day);
+    }
+
     // Whether today's mark gave something, so undoing or deleting it would take a reward back
     public function isRewardedOn(CarbonImmutable $day): bool
     {
@@ -97,6 +127,9 @@ final class Task extends Model
     {
         return [
             'type' => TaskType::class,
+            'difficulty' => TaskDifficulty::class,
+            'weekdays' => WeekdaysCast::class,
+            'position' => 'integer',
         ];
     }
 }

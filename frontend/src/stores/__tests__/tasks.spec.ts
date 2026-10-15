@@ -7,8 +7,9 @@ import {
   createTask,
   deleteTask,
   fetchTasks,
-  renameTask,
+  saveTaskOrder,
   uncompleteTask,
+  updateTask,
 } from '@/api/tasks'
 import {
   characterFixture,
@@ -22,7 +23,8 @@ import { useAuthStore } from '@/stores/auth'
 vi.mock('@/api/tasks', () => ({
   fetchTasks: vi.fn<typeof fetchTasks>(),
   createTask: vi.fn<typeof createTask>(),
-  renameTask: vi.fn<typeof renameTask>(),
+  updateTask: vi.fn<typeof updateTask>(),
+  saveTaskOrder: vi.fn<typeof saveTaskOrder>(),
   deleteTask: vi.fn<typeof deleteTask>(),
   completeTask: vi.fn<typeof completeTask>(),
   uncompleteTask: vi.fn<typeof uncompleteTask>(),
@@ -72,7 +74,7 @@ describe('tasks store', () => {
     const created = { ...todoTaskFixture, id: 3, title: 'Позвонить маме' }
     vi.mocked(createTask).mockResolvedValue(created)
 
-    await store.add({ title: 'Позвонить маме', type: 'todo' })
+    await store.add({ title: 'Позвонить маме', type: 'todo', difficulty: 'medium' })
 
     expect(store.tasks).toEqual([dailyTaskFixture, todoTaskFixture, created])
     expect(store.tasks).not.toBe(before)
@@ -180,14 +182,61 @@ describe('tasks store', () => {
     expect(auth.user?.character).toBeNull()
   })
 
-  it('replaces a renamed task', async () => {
+  it('replaces an updated task', async () => {
     const store = await loadedStore()
-    vi.mocked(renameTask).mockResolvedValue({ ...dailyTaskFixture, title: 'Час Go' })
+    vi.mocked(updateTask).mockResolvedValue({
+      ...dailyTaskFixture,
+      title: 'Час Go',
+      difficulty: 'hard',
+    })
 
-    await store.rename(1, 'Час Go')
+    await store.update(1, { title: 'Час Go', difficulty: 'hard' })
 
-    expect(renameTask).toHaveBeenCalledWith(1, 'Час Go')
-    expect(store.dailies[0]?.title).toBe('Час Go')
+    expect(updateTask).toHaveBeenCalledWith(1, { title: 'Час Go', difficulty: 'hard' })
+    expect(store.dailies[0]).toMatchObject({ title: 'Час Go', difficulty: 'hard' })
+  })
+
+  it('reorders one list in place among tasks of the other type', async () => {
+    const thirdDaily = { ...dailyTaskFixture, id: 3, title: 'Зарядка' }
+    vi.mocked(fetchTasks).mockResolvedValue([dailyTaskFixture, todoTaskFixture, thirdDaily])
+    vi.mocked(saveTaskOrder).mockResolvedValue()
+    const store = useTasksStore()
+    await store.load()
+    const before = store.tasks
+
+    await store.reorder([3, 1])
+
+    expect(store.tasks.map((task) => task.id)).toEqual([3, 2, 1])
+    // Only the reordered list goes to the server
+    expect(saveTaskOrder).toHaveBeenCalledWith([3, 1])
+    expect(store.tasks).not.toBe(before)
+    expect(before.map((task) => task.id)).toEqual([1, 2, 3])
+  })
+
+  it('reloads the order of the server when saving fails', async () => {
+    const store = await loadedStore()
+    vi.mocked(saveTaskOrder).mockRejectedValue(new Error('Network Error'))
+
+    await expect(store.reorder([2])).rejects.toThrow('Network Error')
+
+    expect(fetchTasks).toHaveBeenCalledTimes(2)
+  })
+
+  it('splits the dailies into due today and later', async () => {
+    const offToday = { ...dailyTaskFixture, id: 3, scheduled_today: false }
+    const doneBeforeTheScheduleChanged = { ...completedDaily, id: 4, scheduled_today: false }
+    vi.mocked(fetchTasks).mockResolvedValue([
+      dailyTaskFixture,
+      offToday,
+      doneBeforeTheScheduleChanged,
+      todoTaskFixture,
+    ])
+    const store = useTasksStore()
+
+    await store.load()
+
+    expect(store.dailiesToday.map((task) => task.id)).toEqual([1, 4])
+    expect(store.dailiesLater.map((task) => task.id)).toEqual([3])
   })
 
   it('keeps the reward line when a deleted task gave nothing back', async () => {

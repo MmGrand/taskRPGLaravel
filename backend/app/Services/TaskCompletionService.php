@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\TaskType;
+use App\Exceptions\CompletionRefused;
 use App\Models\Character;
 use App\Models\Task;
 use App\Models\TaskCompletion;
@@ -22,22 +23,28 @@ final class TaskCompletionService
     ) {}
 
     // Idempotent: completing an already completed task changes nothing and gives no reward.
-    // Returns what the character got, or null when nothing was given
+    // Returns what the character got, or null when nothing was given.
+    // Throws CompletionRefused when a daily is not on today's schedule
     public function complete(Task $task): ?Reward
     {
         return DB::transaction(function () use ($task): ?Reward {
-            $this->lock($task);
+            $locked = $this->lock($task);
             $today = $this->calendar->today($task->user);
 
             if ($this->currentCompletion($task, $today) !== null) {
                 return null;
             }
 
+            // Checked after the idempotency return: a task done today stays done even if the day left its schedule
+            if (! $locked->isScheduledOn($today)) {
+                throw CompletionRefused::notScheduled();
+            }
+
             $character = $this->lockCharacter($task);
             $reward = match (true) {
                 $character === null => Reward::none(),
                 $this->rewardedOn($task, $today) >= config()->integer('progression.rewards.daily_limit') => Reward::capped(),
-                default => $this->rewards->rewardFor($this->streaks->lengthIncludingToday($task->user)),
+                default => $this->rewards->rewardFor($this->streaks->lengthIncludingToday($task->user), $locked->difficulty),
             };
 
             $task->completions()->create([
@@ -91,10 +98,11 @@ final class TaskCompletionService
         });
     }
 
-    // Serialises parallel requests for the same task; the completion row may not exist yet
-    private function lock(Task $task): void
+    // Serialises parallel requests for the same task; the completion row may not exist yet.
+    // Returns the row read under the lock: the schedule may have changed since the route bound the task
+    private function lock(Task $task): Task
     {
-        Task::query()->whereKey($task->id)->lockForUpdate()->firstOrFail();
+        return Task::query()->whereKey($task->id)->lockForUpdate()->firstOrFail();
     }
 
     // Rewards of parallel completions of different tasks add up on one row; always taken after the task lock

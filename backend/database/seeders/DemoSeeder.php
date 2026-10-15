@@ -8,6 +8,7 @@ use App\Enums\Beard;
 use App\Enums\HairColor;
 use App\Enums\HairStyle;
 use App\Enums\SkinTone;
+use App\Enums\TaskDifficulty;
 use App\Enums\TaskType;
 use App\Models\Character;
 use App\Models\Item;
@@ -40,7 +41,12 @@ final class DemoSeeder extends Seeder
     // The history completes them in this order: a day with N completions has the first N done
     private const array DAILIES = ['30 минут Go', 'Зарядка', 'Прочитать 20 страниц', 'Английский 15 минут', 'Разобрать почту'];
 
-    private const array TODOS = ['Записаться к стоматологу', 'Купить кроссовки для бега', 'Настроить бэкап фотографий'];
+    // Dailies stay medium: their history was rewarded so. Todos show the other difficulties
+    private const array TODOS = [
+        'Записаться к стоматологу' => TaskDifficulty::Easy,
+        'Купить кроссовки для бега' => TaskDifficulty::Medium,
+        'Настроить бэкап фотографий' => TaskDifficulty::Hard,
+    ];
 
     // Completions on each day of a 12-day streak that ended yesterday, oldest first.
     // Leaves the hero 26 XP short of level 5, so two completions today level up
@@ -100,8 +106,8 @@ final class DemoSeeder extends Seeder
             /** @var Collection<int, Task> $dailies */
             $dailies = collect(self::DAILIES)
                 ->map(fn (string $title): Task => $user->tasks()->create(['title' => $title, 'type' => TaskType::Daily]));
-            foreach (self::TODOS as $title) {
-                $user->tasks()->create(['title' => $title, 'type' => TaskType::Todo]);
+            foreach (self::TODOS as $title => $difficulty) {
+                $user->tasks()->create(['title' => $title, 'type' => TaskType::Todo, 'difficulty' => $difficulty]);
             }
 
             $this->seedHistory($this->calendar->today($user), $dailies, $character);

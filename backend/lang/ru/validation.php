@@ -161,6 +161,10 @@ return [
     'attributes'             => [
         // Task RPG fields
         'beard'                    => 'борода',
+        'difficulty'               => 'сложность',
+        'ids'                      => 'список задач',
+        'weekdays'                 => 'дни недели',
+        'weekdays.*'               => 'день недели',
         'hair_color'               => 'цвет волос',
         'hair_style'               => 'причёска',
         'item_id'                  => 'предмет',
