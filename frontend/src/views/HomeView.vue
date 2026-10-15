@@ -113,6 +113,7 @@ useRefreshOnVisible(refreshTasks)
         </span>
       </RouterLink>
       <RouterLink :to="{ name: 'equipment' }" class="btn-secondary">Снаряжение</RouterLink>
+      <RouterLink :to="{ name: 'stats' }" class="btn-secondary">Статистика</RouterLink>
       <button
         type="button"
         class="btn-secondary"

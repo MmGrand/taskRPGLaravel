@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature\Seeders\Demo;
 
 use App\Models\Item;
+use App\Models\Task;
 use App\Models\TaskCompletion;
 use App\Models\User;
+use App\Services\StatsService;
 use Carbon\CarbonImmutable;
 use Database\Seeders\DemoSeeder;
 use Database\Seeders\ItemCatalogSeeder;
@@ -18,12 +20,12 @@ use Tests\TestCase;
 
 uses(RefreshDatabase::class);
 
-// Totals of the 12-day demo history and the five purchases
-const DEMO_XP = 825;
-const DEMO_GOLD = 161;
+// Totals of the 12-day demo history and the five purchases, on the real balance
+const DEMO_XP = 614;
+const DEMO_GOLD = 239;
 // What one completion gives today: day 13 of the streak, bonus capped at +100%
 const TODAY_XP = 20;
-const TODAY_GOLD = 10;
+const TODAY_GOLD = 16;
 
 function seedDemo(TestCase $test): User
 {
@@ -34,6 +36,8 @@ function seedDemo(TestCase $test): User
 }
 
 beforeEach(function () {
+    // The demo is what reviewers see, so it is checked on the numbers players get
+    $this->useRealBalance();
     $this->travelTo(CarbonImmutable::parse('2026-10-13 12:00:00', 'UTC'));
 });
 
@@ -130,6 +134,82 @@ it('can run again without touching the demo account', function () {
     // Assert
     expect(User::query()->where('email', DemoSeeder::EMAIL)->count())->toBe(1)
         ->and($demo->character->refresh()->xp)->toBe(DEMO_XP + TODAY_XP);
+});
+
+it('moves an aged history so its last day is yesterday', function () {
+    // Arrange: seeded on the 13th, the container starts again a week later
+    $demo = seedDemo($this);
+    $this->travelTo(CarbonImmutable::parse('2026-10-20 12:00:00', 'UTC'));
+
+    // Act
+    $this->seed(DemoSeeder::class);
+
+    // Assert
+    $character = $this->actingAs($demo)->getJson('/api/user')->json('data.character');
+    expect($character['streak'])->toBe(['days' => 12, 'active_today' => false])
+        ->and($character['progress']['xp_total'])->toBe(DEMO_XP)
+        ->and(TaskCompletion::query()->max('period_date'))->toStartWith('2026-10-19')
+        ->and(TaskCompletion::query()->min('period_date'))->toStartWith('2026-10-08');
+});
+
+it('keeps what the reviewer did and moves it along', function () {
+    // Arrange: a completion on the 13th, then five days without a start
+    $demo = seedDemo($this);
+    $daily = $demo->tasks()->where('type', 'daily')->orderBy('id')->firstOrFail();
+    $this->actingAs($demo)->putJson("/api/tasks/{$daily->id}/completion")->assertOk();
+    $this->travelTo(CarbonImmutable::parse('2026-10-18 12:00:00', 'UTC'));
+
+    // Act
+    $this->seed(DemoSeeder::class);
+
+    // Assert
+    $character = $this->actingAs($demo)->getJson('/api/user')->json('data.character');
+    expect($character['streak'])->toBe(['days' => 13, 'active_today' => false])
+        ->and($character['progress']['xp_total'])->toBe(DEMO_XP + TODAY_XP)
+        ->and($daily->completions()->max('period_date'))->toStartWith('2026-10-17');
+});
+
+it('never moves a task or a purchase made after the last completion into the future', function () {
+    // Arrange: two days after the last completion the reviewer adds a task and buys an item, then a long pause
+    $demo = seedDemo($this);
+    $this->travelTo(CarbonImmutable::parse('2026-10-14 12:00:00', 'UTC'));
+    $task = $this->actingAs($demo)->postJson('/api/tasks', ['title' => 'Новая', 'type' => 'daily'])->json('data.id');
+    $this->actingAs($demo)->postJson('/api/shop/purchases', [
+        'item_id' => Item::query()->where('code', 'apprentice_staff')->value('id'),
+    ])->assertCreated();
+    $this->travelTo(CarbonImmutable::parse('2026-10-20 12:00:00', 'UTC'));
+
+    // Act: the history moves 7 days, the new task and item would move to the 21st
+    $this->seed(DemoSeeder::class);
+
+    // Assert
+    expect(Task::query()->findOrFail($task)->created_at->lessThanOrEqualTo(now()))->toBeTrue()
+        ->and($demo->character->inventoryItems()->max('acquired_at'))->toStartWith('2026-10-20 12:00:00');
+});
+
+it('leaves a history that ended yesterday or today where it is', function (string $now) {
+    // Arrange
+    seedDemo($this);
+    $this->travelTo(CarbonImmutable::parse($now, 'UTC'));
+
+    // Act
+    $this->seed(DemoSeeder::class);
+
+    // Assert
+    expect(TaskCompletion::query()->max('period_date'))->toStartWith('2026-10-12');
+})->with(['same day' => '2026-10-13 18:00:00', 'next morning in Moscow' => '2026-10-12 23:00:00']);
+
+it('gives the stats page a share of the demo dailies', function () {
+    // Arrange
+    $demo = seedDemo($this);
+
+    // Act
+    $rate = app(StatsService::class)->dailyCompletionRate($demo);
+
+    // Assert: five dailies over twelve days, done 3 or 4 a day
+    expect($rate->scheduled)->toBe(60)
+        ->and($rate->completed)->toBe(39)
+        ->and($rate->percent())->toBe(65);
 });
 
 it('never creates the account with a published password outside local development', function () {

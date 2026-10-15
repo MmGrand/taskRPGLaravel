@@ -7,6 +7,9 @@ import {
   type Weekday,
   type Appearance,
   type Character,
+  type DailyRate,
+  type HeatmapDay,
+  type Stats,
   type EquippedItem,
   type InventoryItem,
   type Item,
@@ -168,6 +171,33 @@ export function isCompletionResponse(
     isTask(value.data) &&
     (value.character === null || isCharacter(value.character)) &&
     (value.reward === null || isReward(value.reward))
+  )
+}
+
+function isCount(value: unknown): value is number {
+  return Number.isInteger(value) && (value as number) >= 0
+}
+
+function isHeatmapDay(value: unknown): value is HeatmapDay {
+  return isRecord(value) && typeof value.date === 'string' && isCount(value.count)
+}
+
+function isDailyRate(value: unknown): value is DailyRate {
+  return (
+    isRecord(value) &&
+    isCount(value.days) &&
+    isCount(value.scheduled) &&
+    isCount(value.completed) &&
+    (value.percent === null || isCount(value.percent))
+  )
+}
+
+export function isStats(value: unknown): value is Stats {
+  return (
+    isRecord(value) &&
+    Array.isArray(value.heatmap) &&
+    value.heatmap.every(isHeatmapDay) &&
+    isDailyRate(value.dailies)
   )
 }
 
