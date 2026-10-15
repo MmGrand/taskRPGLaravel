@@ -17,7 +17,7 @@ return [
 
     'rewards' => [
         'xp' => 10,
-        'gold' => 5,
+        'gold' => 8,
         'daily_limit' => 10,
     ],
 
@@ -60,11 +60,14 @@ return [
     | XP needed to leave a level: round(base_xp * level ^ exponent).
     | An exponent above 1 makes every next level harder.
     |
+    | Tuned with `php artisan balance:simulate`: 5 medium tasks a day reach
+    | level 10 and buy the whole catalog in about six to seven weeks.
+    |
     */
 
     'levels' => [
-        'base_xp' => 50,
-        'exponent' => 1.5,
+        'base_xp' => 45,
+        'exponent' => 1.35,
     ],
 
 ];

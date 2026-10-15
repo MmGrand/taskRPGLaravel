@@ -119,6 +119,15 @@ describe('HomeView', () => {
     expect(wrapper.get('[data-testid="task-progress"]').text()).toBe('0 / 1')
   })
 
+  it('links to the stats page', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([])
+    const { wrapper } = await mountView()
+
+    const link = wrapper.findAll('a').find((anchor) => anchor.text() === 'Статистика')
+
+    expect(link?.attributes('href')).toBe('/stats')
+  })
+
   it('links to the equipment page', async () => {
     vi.mocked(fetchTasks).mockResolvedValue([])
     const { wrapper } = await mountView()

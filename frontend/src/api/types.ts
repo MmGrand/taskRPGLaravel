@@ -111,6 +111,26 @@ export interface Task {
   created_at: string
 }
 
+// Completions of one day of the user's calendar
+export interface HeatmapDay {
+  date: string
+  count: number
+}
+
+// Dailies due and done over the last finished days; percent is null while nothing was due
+export interface DailyRate {
+  days: number
+  scheduled: number
+  completed: number
+  percent: number | null
+}
+
+export interface Stats {
+  // From a Monday to today, every day present
+  heatmap: HeatmapDay[]
+  dailies: DailyRate
+}
+
 export interface CompletionResult {
   task: Task
   character: Character | null

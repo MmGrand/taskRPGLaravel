@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\PurchaseController;
 use App\Http\Controllers\Api\ShopController;
 use App\Http\Controllers\Api\ShopVisitController;
+use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\TaskCompletionController;
 use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\TaskOrderController;
@@ -32,6 +33,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/character/equipment/{slot}', [EquipmentController::class, 'update']);
     Route::delete('/character/equipment/{slot}', [EquipmentController::class, 'destroy']);
     Route::put('/character/shop-seen', ShopVisitController::class);
+
+    Route::get('/stats', StatsController::class);
 
     Route::get('/shop', ShopController::class);
     Route::post('/shop/purchases', PurchaseController::class);

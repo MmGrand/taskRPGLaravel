@@ -23,6 +23,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 // A hero with history for reviewers: level 4, a 12-day streak, bought and worn items
 final class DemoSeeder extends Seeder
@@ -49,8 +50,12 @@ final class DemoSeeder extends Seeder
     ];
 
     // Completions on each day of a 12-day streak that ended yesterday, oldest first.
-    // Leaves the hero 26 XP short of level 5, so two completions today level up
-    private const array COMPLETIONS_PER_DAY = [4, 4, 4, 5, 4, 4, 5, 5, 4, 5, 5, 4];
+    // On the tuned balance this is 614 XP, 36 short of level 5, so two completions today level up.
+    // 39 of the 60 dailies due are done: the stats page shows 65%
+    private const array COMPLETIONS_PER_DAY = [3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4];
+
+    // The tasks exist from the morning of the first day of the history, so all of it counts in the stats
+    private const int CREATED_AT_HOUR = 9;
 
     private const int COMPLETED_AT_HOUR = 19;
 
@@ -79,9 +84,15 @@ final class DemoSeeder extends Seeder
             return;
         }
 
-        // Safe on every container start: an existing demo account, with whatever the reviewer did, stays
-        if (User::query()->where('email', self::EMAIL)->exists()) {
-            $this->command?->info('Demo user already exists, skipped.');
+        // Safe on every container start: an existing demo account keeps whatever the reviewer did,
+        // its history only moves forward so the streak is still alive
+        $existing = User::query()->where('email', self::EMAIL)->first();
+
+        if ($existing !== null) {
+            $moved = $this->freshen($existing);
+            $this->command?->info($moved === 0
+                ? 'Demo user already exists and is up to date.'
+                : 'Demo history moved '.$moved.' '.Str::plural('day', $moved).' forward.');
 
             return;
         }
@@ -110,7 +121,11 @@ final class DemoSeeder extends Seeder
                 $user->tasks()->create(['title' => $title, 'type' => TaskType::Todo, 'difficulty' => $difficulty]);
             }
 
-            $this->seedHistory($this->calendar->today($user), $dailies, $character);
+            $today = $this->calendar->today($user);
+            $user->tasks()->update([
+                'created_at' => $today->subDays(count(self::COMPLETIONS_PER_DAY))->setTime(self::CREATED_AT_HOUR, 0)->utc(),
+            ]);
+            $this->seedHistory($today, $dailies, $character);
             $this->buyAndWear($character);
             // Purchases changed a locked copy of the row, so the gold here is stale
             $this->shop->markSeen($character->refresh());
@@ -140,6 +155,52 @@ final class DemoSeeder extends Seeder
                 $this->rewards->grant($character, $reward);
             }
         }
+    }
+
+    // Moves the whole history by whole days so its last active day is yesterday. Every row moves by the same
+    // number of days, so the streak stays as it was. Returns the days moved
+    private function freshen(User $user): int
+    {
+        $completions = DB::table('task_completions')
+            ->join('tasks', 'tasks.id', '=', 'task_completions.task_id')
+            ->where('tasks.user_id', $user->id)
+            ->orderByDesc('task_completions.period_date')
+            ->get(['task_completions.id', 'task_completions.period_date']);
+        $last = $completions->first()?->period_date;
+        $yesterday = $this->calendar->today($user)->subDay();
+
+        if (! is_string($last) || $last >= $yesterday->toDateString()) {
+            return 0;
+        }
+
+        $days = (int) CarbonImmutable::parse($last, $user->timezone)->diffInDays($yesterday);
+
+        DB::transaction(function () use ($user, $days, $completions): void {
+            // Postgres checks the unique task and day after every row, so one statement would hit a neighbour
+            // not moved yet. Latest first, each row lands on a day that is already free; the demo has few rows
+            foreach ($completions as $completion) {
+                DB::update(
+                    'update task_completions set period_date = period_date + cast(? as integer),
+                        completed_at = completed_at + make_interval(days => cast(? as integer))
+                        where id = ?',
+                    [$days, $days, $completion->id],
+                );
+            }
+            // A task made or an item bought after the last completion would land in the future, so stop at now
+            $now = now();
+            DB::update(
+                'update tasks set created_at = least(created_at + make_interval(days => cast(? as integer)), ?)
+                    where user_id = ?',
+                [$days, $now, $user->id],
+            );
+            DB::update(
+                'update inventory_items set acquired_at = least(acquired_at + make_interval(days => cast(? as integer)), ?)
+                    where character_id in (select id from characters where user_id = ?)',
+                [$days, $now, $user->id],
+            );
+        });
+
+        return $days;
     }
 
     private function buyAndWear(Character $character): void
