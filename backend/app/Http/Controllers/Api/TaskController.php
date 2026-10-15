@@ -39,6 +39,7 @@ final class TaskController extends Controller
         $tasks = $user->tasks()
             ->activeOn($this->calendar->today($user))
             ->with('latestCompletion')
+            ->orderBy('position')
             ->orderBy('id')
             ->get();
 
@@ -62,7 +63,8 @@ final class TaskController extends Controller
             );
 
             /** @var Task $task */
-            $task = $user->tasks()->create($request->validated());
+            // The model puts it last; the lock above keeps parallel creations from taking the same place
+            $task = $user->tasks()->create($request->taskAttributes());
 
             return $task;
         });
@@ -75,7 +77,7 @@ final class TaskController extends Controller
     public function update(UpdateTaskRequest $request, Task $task): TaskResource
     {
         $this->ensureOwnedBy($request, $task);
-        $task->update($request->validated());
+        $task->update($request->taskAttributes());
 
         return new TaskResource($task->load('latestCompletion'));
     }

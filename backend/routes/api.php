@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\ShopController;
 use App\Http\Controllers\Api\ShopVisitController;
 use App\Http\Controllers\Api\TaskCompletionController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\TaskOrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', HealthController::class);
@@ -37,6 +38,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/tasks', [TaskController::class, 'index']);
     Route::post('/tasks', [TaskController::class, 'store']);
+    // Above the {task} routes, so "order" is never read as a task id
+    Route::put('/tasks/order', TaskOrderController::class);
     Route::patch('/tasks/{task}', [TaskController::class, 'update']);
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
     Route::put('/tasks/{task}/completion', [TaskCompletionController::class, 'store']);

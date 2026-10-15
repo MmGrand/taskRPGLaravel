@@ -22,6 +22,7 @@ final class TaskCompletionController extends Controller
     {
         $this->ensureOwnedBy($request, $task);
 
+        // A daily off its schedule throws CompletionRefused, which bootstrap/app.php turns into a 422
         return $this->respondWithChange($request, $task, $this->completions->complete($task));
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\TaskDifficulty;
 use App\Models\Character;
 use App\ValueObjects\Reward;
 
@@ -11,17 +12,19 @@ final class RewardService
 {
     private const int PERCENT = 100;
 
-    // Streak day 1 earns the base reward; each later day adds a capped bonus, rounded down
-    public function rewardFor(int $streakDays): Reward
+    // Streak day 1 earns the base reward; each later day adds a capped bonus.
+    // The difficulty scales the reward together with the bonus, rounded down once at the end
+    public function rewardFor(int $streakDays, TaskDifficulty $difficulty = TaskDifficulty::Medium): Reward
     {
         $bonus = min(
             max(0, $streakDays - 1) * config()->integer('progression.streak_bonus.percent_per_day'),
             config()->integer('progression.streak_bonus.max_percent'),
         );
+        $scale = $difficulty->rewardPercent() * (self::PERCENT + $bonus);
 
         return new Reward(
-            intdiv(config()->integer('progression.rewards.xp') * (self::PERCENT + $bonus), self::PERCENT),
-            intdiv(config()->integer('progression.rewards.gold') * (self::PERCENT + $bonus), self::PERCENT),
+            intdiv(config()->integer('progression.rewards.xp') * $scale, self::PERCENT * self::PERCENT),
+            intdiv(config()->integer('progression.rewards.gold') * $scale, self::PERCENT * self::PERCENT),
         );
     }
 

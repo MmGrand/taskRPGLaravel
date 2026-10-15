@@ -29,6 +29,10 @@ final class TaskResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'type' => $this->type->value,
+            'difficulty' => $this->difficulty->value,
+            'weekdays' => $this->weekdays->isoDays(),
+            // A daily off its schedule today cannot be completed; a todo is always due
+            'scheduled_today' => $this->isScheduledOn($today),
             'is_completed' => $isCompleted,
             // Deleting the task gives this back; false past the daily limit and for a todo done earlier
             'rewarded_today' => $this->isRewardedOn($today),

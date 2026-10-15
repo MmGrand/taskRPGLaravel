@@ -1,54 +1,62 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, useTemplateRef } from 'vue'
+import { computed, ref } from 'vue'
 
-import type { Task } from '@/api/types'
+import type { ValidationErrors } from '@/api/errors'
+import type { Task, UpdateTaskPayload } from '@/api/types'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import TaskEditDialog from '@/components/TaskEditDialog.vue'
+import { difficultyLabel, formatWeekdays } from '@/game/tasks'
 
-const props = defineProps<{
-  task: Task
-  disabled: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    task: Task
+    disabled: boolean
+    // Saves an edit and tells whether it worked: the dialog stays open with the server's errors until then
+    save: (payload: UpdateTaskPayload) => Promise<boolean>
+    // What the server said about the last action of the list
+    errors?: ValidationErrors
+    generalError?: string | null
+    // Rows of a sortable list get a handle; the "not today" group has none
+    draggable?: boolean
+  }>(),
+  { errors: () => ({}), generalError: null, draggable: false },
+)
 
 const emit = defineEmits<{
   toggle: [completed: boolean]
-  rename: [title: string]
   remove: []
+  move: [step: -1 | 1]
 }>()
 
 const editing = ref(false)
-const draft = ref('')
+// The list's errors belong to this dialog only after it tried to save; until then they are someone else's
+const triedToSave = ref(false)
 const confirmingRemoval = ref(false)
 // The server knows whether today's mark paid out: not past the daily limit, not for a todo done earlier
 const removalMessage = computed(
   () =>
     `«${props.task.title}» пропадёт из списка.${props.task.rewarded_today ? ' Награда за сегодня вернётся.' : ''}`,
 )
-const titleInput = useTemplateRef<HTMLInputElement>('titleInput')
+// A daily off its schedule cannot be completed today; one done before its day left the schedule can be undone
+const offToday = computed(() => !props.task.scheduled_today && !props.task.is_completed)
+const details = computed(() =>
+  [difficultyLabel(props.task.difficulty), formatWeekdays(props.task.weekdays)]
+    .filter((part) => part !== '')
+    .join(' · '),
+)
 
-async function startEditing(): Promise<void> {
-  draft.value = props.task.title
+function startEditing(): void {
+  triedToSave.value = false
   editing.value = true
-  await nextTick()
-  titleInput.value?.focus()
 }
 
-// Enter and the blur that follows both land here; only the first one counts.
-// While another action of the list runs the rename would be dropped, so keep the draft open
-function commit(): void {
-  if (!editing.value || props.disabled) {
-    return
+// Closes only once the server took the change, so a refused edit keeps what the player entered
+async function saveEdit(payload: UpdateTaskPayload): Promise<void> {
+  triedToSave.value = true
+
+  if (await props.save(payload)) {
+    editing.value = false
   }
-
-  editing.value = false
-  const title = draft.value.trim()
-
-  if (title !== '' && title !== props.task.title) {
-    emit('rename', title)
-  }
-}
-
-function cancel(): void {
-  editing.value = false
 }
 
 function confirmRemoval(): void {
@@ -58,9 +66,40 @@ function confirmRemoval(): void {
 </script>
 
 <template>
-  <li class="flex items-center gap-3 py-2">
+  <li class="flex items-center gap-3 py-2" :class="{ 'opacity-60': offToday }">
+    <!-- Grip outline from Lucide (ISC). touch-none: dragging by the handle never scrolls the page -->
+    <button
+      v-if="draggable"
+      type="button"
+      class="drag-handle -ml-1 inline-flex shrink-0 cursor-grab touch-none items-center rounded p-1 text-slate-400 hover:text-slate-200 active:cursor-grabbing disabled:cursor-not-allowed"
+      :aria-label="`Переместить «${task.title}»`"
+      :data-task-id="task.id"
+      :disabled="disabled"
+      @keydown.up.prevent="emit('move', -1)"
+      @keydown.down.prevent="emit('move', 1)"
+    >
+      <svg
+        aria-hidden="true"
+        class="size-4"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="9" cy="12" r="1" />
+        <circle cx="9" cy="5" r="1" />
+        <circle cx="9" cy="19" r="1" />
+        <circle cx="15" cy="12" r="1" />
+        <circle cx="15" cy="5" r="1" />
+        <circle cx="15" cy="19" r="1" />
+      </svg>
+    </button>
+
     <!-- Controlled: the box changes only when the store receives the server answer -->
     <input
+      v-if="!offToday"
       type="checkbox"
       class="size-5 shrink-0 cursor-pointer accent-accent disabled:cursor-not-allowed"
       :checked="task.is_completed"
@@ -68,31 +107,26 @@ function confirmRemoval(): void {
       :aria-label="`Выполнено: ${task.title}`"
       @click.prevent="emit('toggle', !task.is_completed)"
     />
+    <span v-else class="size-5 shrink-0" aria-hidden="true" />
 
-    <input
-      v-if="editing"
-      ref="titleInput"
-      v-model="draft"
-      aria-label="Новое название"
-      class="min-w-0 flex-1 rounded-md border border-white/10 bg-ink px-2 py-1 text-slate-100 outline-none focus:border-accent"
-      @keydown.enter.prevent="commit"
-      @keydown.esc="cancel"
-      @blur="commit"
-    />
-    <span
-      v-else
-      data-testid="task-title"
-      class="min-w-0 flex-1 break-words"
-      :class="task.is_completed ? 'text-slate-400 line-through' : ''"
-    >
-      {{ task.title }}
-    </span>
+    <div class="flex min-w-0 flex-1 flex-col">
+      <span
+        data-testid="task-title"
+        class="break-words"
+        :class="task.is_completed ? 'text-slate-400 line-through' : ''"
+      >
+        {{ task.title }}
+      </span>
+      <span v-if="details" data-testid="task-details" class="text-xs text-slate-400">
+        {{ details }}
+      </span>
+    </div>
 
     <!-- Pencil and trash outlines from Lucide (ISC); the button label names the action -->
     <button
       type="button"
       class="btn-secondary inline-flex items-center px-2 py-1.5"
-      aria-label="Переименовать"
+      aria-label="Изменить"
       :disabled="disabled"
       @click="startEditing"
     >
@@ -136,6 +170,16 @@ function confirmRemoval(): void {
         <line x1="14" x2="14" y1="11" y2="17" />
       </svg>
     </button>
+
+    <TaskEditDialog
+      v-if="editing"
+      :task="task"
+      :busy="disabled"
+      :errors="triedToSave ? errors : undefined"
+      :general-error="triedToSave ? generalError : null"
+      @save="saveEdit"
+      @cancel="editing = false"
+    />
 
     <!-- While another action of the list runs, the removal would be dropped, so it waits -->
     <ConfirmDialog

@@ -89,10 +89,21 @@ export interface CreateCharacterPayload extends Appearance {
 export const TASK_TYPES = ['daily', 'todo'] as const
 export type TaskType = (typeof TASK_TYPES)[number]
 
+export const TASK_DIFFICULTIES = ['easy', 'medium', 'hard'] as const
+export type TaskDifficulty = (typeof TASK_DIFFICULTIES)[number]
+
+// ISO weekday: 1 is Monday, 7 is Sunday
+export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7
+
 export interface Task {
   id: number
   title: string
   type: TaskType
+  difficulty: TaskDifficulty
+  // Sorted; every day for a todo
+  weekdays: Weekday[]
+  // A daily off its schedule today cannot be completed; always true for a todo
+  scheduled_today: boolean
   is_completed: boolean
   // Deleting the task gives a reward back: false past the daily limit or for a todo done earlier
   rewarded_today: boolean
@@ -109,4 +120,9 @@ export interface CompletionResult {
 export interface CreateTaskPayload {
   title: string
   type: TaskType
+  difficulty: TaskDifficulty
+  // Only for a daily; every day when left out
+  weekdays?: Weekday[]
 }
+
+export type UpdateTaskPayload = Partial<Pick<Task, 'title' | 'difficulty' | 'weekdays'>>

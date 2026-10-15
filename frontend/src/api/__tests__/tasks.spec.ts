@@ -6,8 +6,9 @@ import {
   createTask,
   deleteTask,
   fetchTasks,
-  renameTask,
+  saveTaskOrder,
   uncompleteTask,
+  updateTask,
 } from '../tasks'
 import { characterFixture, dailyTaskFixture, todoTaskFixture } from './fixtures'
 
@@ -55,17 +56,28 @@ describe('tasks api', () => {
 
   it('creates a task', async () => {
     postMock.mockResolvedValue({ data: { data: todoTaskFixture } })
-    const payload = { title: 'Купить гантели', type: 'todo' } as const
+    const payload = { title: 'Купить гантели', type: 'todo', difficulty: 'medium' } as const
 
     await expect(createTask(payload)).resolves.toEqual(todoTaskFixture)
     expect(postMock).toHaveBeenCalledWith('/tasks', payload)
   })
 
-  it('renames a task', async () => {
-    patchMock.mockResolvedValue({ data: { data: { ...dailyTaskFixture, title: 'Час Go' } } })
+  it('updates only the given fields of a task', async () => {
+    const updated = { ...dailyTaskFixture, difficulty: 'hard', weekdays: [1, 3, 5] } as const
+    patchMock.mockResolvedValue({ data: { data: updated } })
 
-    await expect(renameTask(1, 'Час Go')).resolves.toMatchObject({ title: 'Час Go' })
-    expect(patchMock).toHaveBeenCalledWith('/tasks/1', { title: 'Час Go' })
+    await expect(updateTask(1, { difficulty: 'hard', weekdays: [1, 3, 5] })).resolves.toEqual(
+      updated,
+    )
+    expect(patchMock).toHaveBeenCalledWith('/tasks/1', { difficulty: 'hard', weekdays: [1, 3, 5] })
+  })
+
+  it('saves the order of the tasks', async () => {
+    putMock.mockResolvedValue({ status: 204, data: '' })
+
+    await saveTaskOrder([3, 1, 2])
+
+    expect(putMock).toHaveBeenCalledWith('/tasks/order', { ids: [3, 1, 2] })
   })
 
   it('deletes a task, bringing the hero and the taken back reward along', async () => {

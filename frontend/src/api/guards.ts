@@ -2,7 +2,9 @@ import { APPEARANCE_OPTIONS, type Tile } from '@/game/appearance'
 import { ITEM_SLOTS } from '@/game/equipment'
 
 import {
+  TASK_DIFFICULTIES,
   TASK_TYPES,
+  type Weekday,
   type Appearance,
   type Character,
   type EquippedItem,
@@ -128,12 +130,25 @@ export function isUser(value: unknown): value is User {
   )
 }
 
+const FIRST_WEEKDAY = 1
+const LAST_WEEKDAY = 7
+
+function isWeekdayList(value: unknown): value is Weekday[] {
+  return (
+    Array.isArray(value) &&
+    value.every((day) => Number.isInteger(day) && day >= FIRST_WEEKDAY && day <= LAST_WEEKDAY)
+  )
+}
+
 export function isTask(value: unknown): value is Task {
   return (
     isRecord(value) &&
     typeof value.id === 'number' &&
     typeof value.title === 'string' &&
     isOneOf(TASK_TYPES, value.type) &&
+    isOneOf(TASK_DIFFICULTIES, value.difficulty) &&
+    isWeekdayList(value.weekdays) &&
+    typeof value.scheduled_today === 'boolean' &&
     typeof value.is_completed === 'boolean' &&
     typeof value.rewarded_today === 'boolean' &&
     (value.completed_at === null || typeof value.completed_at === 'string') &&

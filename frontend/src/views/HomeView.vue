@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import CharacterSprite from '@/components/CharacterSprite.vue'
 import CharacterStats from '@/components/CharacterStats.vue'
 import LevelUpBanner from '@/components/LevelUpBanner.vue'
+import OnboardingCard from '@/components/OnboardingCard.vue'
 import RewardFloat from '@/components/RewardFloat.vue'
 import TaskCreateForm from '@/components/TaskCreateForm.vue'
 import TaskList from '@/components/TaskList.vue'
@@ -18,6 +19,7 @@ import { useTasksStore } from '@/stores/tasks'
 
 const HERO_SCALE = 8
 const LOAD_ERROR_MESSAGE = 'Не удалось загрузить задачи. Обнови страницу.'
+const FIRST_REWARD_HINT = 'Отметь задачу — получишь первую награду.'
 
 const auth = useAuthStore()
 const tasks = useTasksStore()
@@ -30,7 +32,11 @@ const rewardNotice = computed(() => {
   const reward = tasks.lastReward
 
   if (reward === null) {
-    return ''
+    // A new player with tasks but no reward yet learns what the checkbox does
+    // Only when there is a checkbox to tick: dailies off their schedule today have none
+    const canTick = tasks.dailiesToday.length + tasks.todos.length > 0
+
+    return character.value?.progress.xp_total === 0 && canTick ? FIRST_REWARD_HINT : ''
   }
 
   const text = describeReward(reward)
@@ -156,11 +162,18 @@ useRefreshOnVisible(refreshTasks)
       </aside>
 
       <main class="flex min-w-0 flex-1 flex-col gap-6">
+        <!-- Until the first task: it goes away by itself once there is something to do -->
+        <OnboardingCard v-if="tasks.loaded && tasks.tasks.length === 0" />
         <TaskCreateForm />
         <p v-if="loadError" class="text-sm text-danger" role="alert">{{ loadError }}</p>
         <p v-else-if="!tasks.loaded" class="text-slate-400">Загружаем задачи…</p>
         <template v-else>
-          <TaskList title="Ежедневные" :tasks="tasks.dailies" show-progress />
+          <TaskList
+            title="Ежедневные"
+            :tasks="tasks.dailiesToday"
+            :later-tasks="tasks.dailiesLater"
+            show-progress
+          />
           <TaskList title="Разовые" :tasks="tasks.todos" />
         </template>
       </main>
