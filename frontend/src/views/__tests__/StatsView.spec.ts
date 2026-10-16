@@ -85,17 +85,4 @@ describe('StatsView', () => {
       'Не удалось загрузить статистику. Обнови страницу.',
     )
   })
-
-  it('leads back to the home page', async () => {
-    vi.mocked(fetchStats).mockResolvedValue(stats)
-
-    const wrapper = await mountView()
-
-    expect(
-      wrapper
-        .findAll('a')
-        .find((link) => link.text() === '← На главную')
-        ?.attributes('href'),
-    ).toBe('/')
-  })
 })

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Api\Concerns\ResolvesCharacter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCharacterRequest;
+use App\Http\Requests\UpdateCharacterRequest;
 use App\Http\Resources\CharacterResource;
 use App\Models\Character;
 use App\Models\User;
@@ -53,5 +54,14 @@ final class CharacterController extends Controller
         return CharacterResource::make($character->load('equippedItems.item'))
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);
+    }
+
+    // Name and look only: progress, gold and equipment are earned, not edited
+    public function update(UpdateCharacterRequest $request): CharacterResource
+    {
+        $character = $this->characterOf($request);
+        $character->update($request->validated());
+
+        return new CharacterResource($character->load('equippedItems.item'));
     }
 }

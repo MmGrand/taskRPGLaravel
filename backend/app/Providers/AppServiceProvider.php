@@ -27,5 +27,9 @@ final class AppServiceProvider extends ServiceProvider
     {
         RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(Config::integer('api.rate_limit_per_minute'))
             ->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
+        // Each try checks the current password, so a stolen session cannot guess it at the general API rate
+        RateLimiter::for('password-change', fn (Request $request): Limit => Limit::perMinute(Config::integer('auth.throttle.password_change_per_minute'))
+            ->by((string) $request->user()?->getAuthIdentifier()));
     }
 }

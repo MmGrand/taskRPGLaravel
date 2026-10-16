@@ -49,6 +49,11 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
   }
 
+  // A profile change returned the whole user
+  function setUser(next: User): void {
+    user.value = next
+  }
+
   function setCharacter(character: Character): void {
     if (user.value === null) {
       return
@@ -68,6 +73,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     register,
     logout,
+    setUser,
     setCharacter,
   }
 })

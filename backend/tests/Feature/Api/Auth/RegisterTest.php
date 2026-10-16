@@ -38,6 +38,14 @@ it('normalizes the email to lowercase', function () {
     $response->assertCreated()->assertJsonPath('data.email', 'hero@example.com');
 });
 
+it('accepts a backward-compatible timezone name some browsers report', function () {
+    // Act
+    $response = $this->postJson('/api/register', [...$this->payload, 'timezone' => 'Asia/Calcutta']);
+
+    // Assert
+    $response->assertCreated()->assertJsonPath('data.timezone', 'Asia/Calcutta');
+});
+
 it('returns validation messages in Russian', function () {
     // Act
     $response = $this->postJson('/api/register', [...$this->payload, 'timezone' => 'Mars/Olympus']);

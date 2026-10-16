@@ -4,13 +4,13 @@ import { RouterLink, useRouter } from 'vue-router'
 
 import FormField from '@/components/FormField.vue'
 import { useFormSubmit } from '@/composables/useFormSubmit'
+import { browserTimezone } from '@/game/timezones'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
 
-// Daily tasks reset at the user's local midnight, so the browser zone is stored on sign-up
-const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+const timezone = browserTimezone()
 
 const form = reactive({ email: '', password: '', password_confirmation: '' })
 const { errors, generalError, submitting, submit } = useFormSubmit()
