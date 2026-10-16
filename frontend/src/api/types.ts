@@ -86,6 +86,15 @@ export interface CreateCharacterPayload extends Appearance {
   name: string
 }
 
+// The profile changes the same name and look the hero was created with
+export type UpdateCharacterPayload = CreateCharacterPayload
+
+export interface UpdatePasswordPayload {
+  current_password: string
+  password: string
+  password_confirmation: string
+}
+
 export const TASK_TYPES = ['daily', 'todo'] as const
 export type TaskType = (typeof TASK_TYPES)[number]
 

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 
 import CharacterSprite from '@/components/CharacterSprite.vue'
 import CharacterStats from '@/components/CharacterStats.vue'
@@ -9,7 +8,6 @@ import OnboardingCard from '@/components/OnboardingCard.vue'
 import RewardFloat from '@/components/RewardFloat.vue'
 import TaskCreateForm from '@/components/TaskCreateForm.vue'
 import TaskList from '@/components/TaskList.vue'
-import { useFormSubmit } from '@/composables/useFormSubmit'
 import { useRefreshOnVisible } from '@/composables/useRefreshOnVisible'
 import { wornItems } from '@/game/equipment'
 import { describeReward, isEmptyReward } from '@/game/progression'
@@ -23,7 +21,6 @@ const FIRST_REWARD_HINT = 'Отметь задачу — получишь пер
 
 const auth = useAuthStore()
 const tasks = useTasksStore()
-const router = useRouter()
 
 const character = computed(() => auth.user?.character ?? null)
 const loadError = ref<string | null>(null)
@@ -57,12 +54,10 @@ const floatReward = computed(() =>
   freshReward.value !== null && !isEmptyReward(freshReward.value) ? freshReward.value : null,
 )
 const levelUp = computed(() => freshReward.value?.levelUp ?? null)
-const hasNewItems = computed(() => (character.value?.shop.new_items.length ?? 0) > 0)
-// Only right after a level up: the shop link mark covers the rest of the time
+// Only right after a level up: the shop link mark in the header covers the rest of the time
 const unlockedNames = computed(() =>
   tasks.lastReward?.levelUp ? formatUnlocked(character.value?.shop.new_items ?? []) : '',
 )
-const { generalError, submitting, submit } = useFormSubmit()
 
 async function loadTasks(): Promise<void> {
   try {
@@ -71,15 +66,6 @@ async function loadTasks(): Promise<void> {
   } catch (error) {
     console.error('Failed to load tasks', error)
     loadError.value = LOAD_ERROR_MESSAGE
-  }
-}
-
-async function onLogout(): Promise<void> {
-  const ok = await submit(() => auth.logout())
-
-  if (ok) {
-    tasks.reset()
-    await router.push({ name: 'login' })
   }
 }
 
@@ -96,36 +82,8 @@ useRefreshOnVisible(refreshTasks)
 
 <template>
   <div class="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
-    <header class="flex flex-wrap items-center gap-2">
-      <h1 class="mr-auto text-2xl font-bold text-accent">Task RPG</h1>
-      <RouterLink
-        :to="{ name: 'shop' }"
-        class="btn-secondary"
-        :aria-label="hasNewItems ? 'Магазин, есть новое' : undefined"
-      >
-        Магазин
-        <span
-          v-if="hasNewItems"
-          class="ml-1 rounded bg-accent px-1 text-xs text-ink"
-          data-testid="shop-new"
-        >
-          Новое
-        </span>
-      </RouterLink>
-      <RouterLink :to="{ name: 'equipment' }" class="btn-secondary">Снаряжение</RouterLink>
-      <RouterLink :to="{ name: 'stats' }" class="btn-secondary">Статистика</RouterLink>
-      <button
-        type="button"
-        class="btn-secondary"
-        data-testid="logout"
-        :disabled="submitting"
-        @click="onLogout"
-      >
-        Выйти
-      </button>
-    </header>
-
-    <p v-if="generalError" class="text-sm text-danger" role="alert">{{ generalError }}</p>
+    <!-- The shared header names the app; the page title is for screen readers -->
+    <h1 class="sr-only">Герой и задачи</h1>
 
     <div class="flex flex-col gap-6 md:flex-row md:items-start">
       <!-- A fixed width on wide screens: a long reward line wraps instead of shifting the layout -->

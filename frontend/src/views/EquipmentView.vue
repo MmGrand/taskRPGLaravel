@@ -67,10 +67,8 @@ onMounted(loadInventory)
 
 <template>
   <div class="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
-    <header class="flex flex-wrap items-center gap-4">
-      <RouterLink :to="{ name: 'home' }" class="btn-secondary">← На главную</RouterLink>
-      <h1 class="text-2xl font-bold text-accent">Снаряжение</h1>
-    </header>
+    <!-- The current page is marked in the shared header; the title is for screen readers -->
+    <h1 class="sr-only">Снаряжение</h1>
 
     <div v-if="character" class="flex flex-col gap-6 md:flex-row md:items-start">
       <aside class="card flex flex-col items-center gap-4">

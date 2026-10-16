@@ -13,6 +13,7 @@ export function makeTestRouter(name: string, view: Component): Router {
     { path: '/equipment', name: 'equipment' },
     { path: '/shop', name: 'shop' },
     { path: '/stats', name: 'stats' },
+    { path: '/profile', name: 'profile' },
   ]
 
   return createRouter({

@@ -28,10 +28,8 @@ onMounted(loadStats)
 
 <template>
   <div class="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
-    <header class="flex flex-wrap items-center gap-4">
-      <RouterLink :to="{ name: 'home' }" class="btn-secondary">← На главную</RouterLink>
-      <h1 class="mr-auto text-2xl font-bold text-accent">Статистика</h1>
-    </header>
+    <!-- The current page is marked in the shared header; the title is for screen readers -->
+    <h1 class="sr-only">Статистика</h1>
 
     <p v-if="loadError" class="text-sm text-danger" role="alert">{{ loadError }}</p>
     <p v-else-if="stats === null" class="text-slate-400">Загружаем статистику…</p>

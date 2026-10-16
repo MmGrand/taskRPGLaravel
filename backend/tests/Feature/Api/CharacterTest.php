@@ -121,8 +121,67 @@ it('returns only the character of the authenticated user', function () {
         ->assertJsonPath('data.equipment', []);
 });
 
+it('changes the name and look of the character', function () {
+    // Arrange
+    $character = Character::factory()->for($this->user)->create(['name' => 'Старое имя']);
+
+    // Act
+    $response = $this->actingAs($this->user)->putJson('/api/character', $this->payload);
+
+    // Assert
+    $response->assertOk()
+        ->assertJsonPath('data.id', $character->id)
+        ->assertJsonPath('data.name', 'Torin')
+        ->assertJsonPath('data.appearance', [
+            'skin_tone' => 'tan',
+            'hair_style' => 'braids',
+            'hair_color' => 'ginger',
+            'beard' => 'full',
+        ]);
+    $this->assertDatabaseHas('characters', ['id' => $character->id, 'name' => 'Torin', 'hair_style' => 'braids']);
+});
+
+it('keeps progress and gold when the look changes', function () {
+    // Arrange
+    Character::factory()->for($this->user)->withXp(60, 25)->create();
+
+    // Act: earned values cannot be sent along
+    $response = $this->actingAs($this->user)->putJson('/api/character', [...$this->payload, 'xp' => 9999, 'gold' => 9999]);
+
+    // Assert
+    $response->assertOk()
+        ->assertJsonPath('data.progress.xp_total', 60)
+        ->assertJsonPath('data.gold', 25);
+});
+
+it('rejects invalid character changes', function (array $overrides, string $field) {
+    // Arrange
+    Character::factory()->for($this->user)->create(['name' => 'Торин']);
+
+    // Act
+    $response = $this->actingAs($this->user)->putJson('/api/character', [...$this->payload, ...$overrides]);
+
+    // Assert
+    $response->assertUnprocessable()->assertJsonValidationErrors([$field]);
+    $this->assertDatabaseHas('characters', ['user_id' => $this->user->id, 'name' => 'Торин']);
+})->with([
+    'too short name' => [['name' => 'A'], 'name'],
+    'markup in name' => [['name' => '<script>'], 'name'],
+    'unknown hair style' => [['hair_style' => 'afro'], 'hair_style'],
+    'missing beard' => [['beard' => null], 'beard'],
+]);
+
+it('returns 404 when changing a character that does not exist', function () {
+    // Act
+    $response = $this->actingAs($this->user)->putJson('/api/character', $this->payload);
+
+    // Assert
+    $response->assertNotFound();
+});
+
 it('requires authentication for character endpoints', function () {
     // Act & Assert
     $this->getJson('/api/character')->assertUnauthorized();
     $this->postJson('/api/character', $this->payload)->assertUnauthorized();
+    $this->putJson('/api/character', $this->payload)->assertUnauthorized();
 });

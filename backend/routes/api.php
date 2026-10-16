@@ -17,6 +17,8 @@ use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\TaskCompletionController;
 use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\TaskOrderController;
+use App\Http\Controllers\Api\UserPasswordController;
+use App\Http\Controllers\Api\UserTimezoneController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', HealthController::class);
@@ -27,8 +29,11 @@ Route::post('/login', LoginController::class);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', LogoutController::class);
     Route::get('/user', CurrentUserController::class);
+    Route::put('/user/timezone', UserTimezoneController::class);
+    Route::put('/user/password', UserPasswordController::class)->middleware('throttle:password-change');
     Route::get('/character', [CharacterController::class, 'show']);
     Route::post('/character', [CharacterController::class, 'store']);
+    Route::put('/character', [CharacterController::class, 'update']);
     Route::get('/character/inventory', InventoryController::class);
     Route::put('/character/equipment/{slot}', [EquipmentController::class, 'update']);
     Route::delete('/character/equipment/{slot}', [EquipmentController::class, 'destroy']);

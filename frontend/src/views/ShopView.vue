@@ -92,11 +92,8 @@ onMounted(() => Promise.all([loadShop(), markSeen()]))
 
 <template>
   <div class="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
-    <header class="flex flex-wrap items-center gap-4">
-      <RouterLink :to="{ name: 'home' }" class="btn-secondary">← На главную</RouterLink>
-      <h1 class="mr-auto text-2xl font-bold text-accent">Магазин</h1>
-      <RouterLink :to="{ name: 'equipment' }" class="btn-secondary">Снаряжение</RouterLink>
-    </header>
+    <!-- The current page is marked in the shared header; the title is for screen readers -->
+    <h1 class="sr-only">Магазин</h1>
 
     <div class="flex flex-col gap-6 md:flex-row md:items-start">
       <aside v-if="character" class="card flex flex-col items-center gap-2 md:sticky md:top-8">

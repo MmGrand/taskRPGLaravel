@@ -87,6 +87,16 @@ describe('auth store', () => {
     expect(before?.character).toBeNull()
   })
 
+  it('replaces the user with the one a profile change returned', () => {
+    const auth = useAuthStore()
+    auth.user = userFixture
+    const changed = { ...userFixture, timezone: 'Asia/Tokyo' }
+
+    auth.setUser(changed)
+
+    expect(auth.user).toEqual(changed)
+  })
+
   it('forgets the user locally without calling the api on reset', async () => {
     loginMock.mockResolvedValue(userFixture)
     const auth = useAuthStore()

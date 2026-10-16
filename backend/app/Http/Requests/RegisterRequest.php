@@ -22,7 +22,8 @@ final class RegisterRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)],
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
-            'timezone' => ['required', 'string', 'timezone:all'],
+            // Some browsers still report backward-compatible names such as Asia/Calcutta
+            'timezone' => ['required', 'string', 'timezone:all_with_bc'],
         ];
     }
 }

@@ -119,40 +119,12 @@ describe('HomeView', () => {
     expect(wrapper.get('[data-testid="task-progress"]').text()).toBe('0 / 1')
   })
 
-  it('links to the stats page', async () => {
+  it('names the page for screen readers, leaving the navigation to the shared header', async () => {
     vi.mocked(fetchTasks).mockResolvedValue([])
     const { wrapper } = await mountView()
 
-    const link = wrapper.findAll('a').find((anchor) => anchor.text() === 'Статистика')
-
-    expect(link?.attributes('href')).toBe('/stats')
-  })
-
-  it('links to the equipment page', async () => {
-    vi.mocked(fetchTasks).mockResolvedValue([])
-    const { wrapper } = await mountView()
-
-    const link = wrapper.findAll('a').find((anchor) => anchor.text() === 'Снаряжение')
-
-    expect(link?.attributes('href')).toBe('/equipment')
-  })
-
-  it('links to the shop and marks it while unseen items wait there', async () => {
-    vi.mocked(fetchTasks).mockResolvedValue([])
-    const plain = await mountView()
-    const plainLink = plain.wrapper.findAll('a').find((anchor) => anchor.text() === 'Магазин')
-    expect(plainLink?.attributes('href')).toBe('/shop')
-    expect(plain.wrapper.find('[data-testid="shop-new"]').exists()).toBe(false)
-    plain.wrapper.unmount()
-
-    const marked = await mountView({
-      ...characterFixture,
-      shop: { new_items: [greenBandanaFixture] },
-    })
-
-    const link = marked.wrapper.get('a[href="/shop"]')
-    expect(link.attributes('aria-label')).toBe('Магазин, есть новое')
-    expect(link.get('[data-testid="shop-new"]').text()).toBe('Новое')
+    expect(wrapper.get('h1').text()).toBe('Герой и задачи')
+    expect(wrapper.find('nav').exists()).toBe(false)
   })
 
   it('tells which items a new level unlocked', async () => {
@@ -380,17 +352,5 @@ describe('HomeView', () => {
 
     expect(fetchCurrentUser).toHaveBeenCalled()
     expect(wrapper.get('[data-testid="character-stats"]').text()).toContain('Стрик: 4 дня')
-  })
-
-  it('forgets the tasks on logout', async () => {
-    vi.mocked(fetchTasks).mockResolvedValue([dailyTaskFixture])
-    vi.mocked(logout).mockResolvedValue()
-    const { wrapper, router } = await mountView()
-
-    await wrapper.get('[data-testid="logout"]').trigger('click')
-    await flushPromises()
-
-    expect(useTasksStore().tasks).toEqual([])
-    expect(router.currentRoute.value.name).toBe('login')
   })
 })
