@@ -92,7 +92,12 @@ describe('TaskList', () => {
         .findAll('input[type="checkbox"]')
         .every((box) => box.attributes('disabled') !== undefined),
     ).toBe(true)
-    finish({ task: { ...dailyTaskFixture, is_completed: true }, character: null, reward: null })
+    finish({
+      task: { ...dailyTaskFixture, is_completed: true },
+      character: null,
+      reward: null,
+      achievements: [],
+    })
     await flushPromises()
     expect(wrapper.get('input[type="checkbox"]').attributes('disabled')).toBeUndefined()
   })

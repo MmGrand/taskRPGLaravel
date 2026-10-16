@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Enums\Beard;
+use App\Enums\HabitDirection;
 use App\Enums\HairColor;
 use App\Enums\HairStyle;
 use App\Enums\SkinTone;
@@ -14,6 +15,7 @@ use App\Models\Character;
 use App\Models\Item;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\AchievementService;
 use App\Services\EquipmentService;
 use App\Services\RewardService;
 use App\Services\ShopService;
@@ -25,7 +27,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-// A hero with history for reviewers: level 4, a 12-day streak, bought and worn items
+// A hero with history for reviewers: level 4, a 12-day streak, bought and worn items, habits and achievements
 final class DemoSeeder extends Seeder
 {
     public const string EMAIL = 'demo@example.com';
@@ -49,6 +51,18 @@ final class DemoSeeder extends Seeder
         'Настроить бэкап фотографий' => TaskDifficulty::Hard,
     ];
 
+    // One good habit with pluses and one bad with minuses, so both sides of a habit show
+    private const string GOOD_HABIT = 'Выпить стакан воды';
+
+    private const string BAD_HABIT = 'Листать ленту';
+
+    // Pluses on the last days of the history, a few a day, and minuses on some days (indexes into the history)
+    private const int HABIT_PLUS_DAYS = 5;
+
+    private const int PLUSES_PER_DAY = 2;
+
+    private const array MINUS_DAYS = [2, 6, 9];
+
     // Completions on each day of a 12-day streak that ended yesterday, oldest first.
     // On the tuned balance this is 614 XP, 36 short of level 5, so two completions today level up.
     // 39 of the 60 dailies due are done: the stats page shows 65%
@@ -70,6 +84,7 @@ final class DemoSeeder extends Seeder
         private readonly RewardService $rewards,
         private readonly ShopService $shop,
         private readonly EquipmentService $equipment,
+        private readonly AchievementService $achievements,
     ) {}
 
     /**
@@ -120,16 +135,47 @@ final class DemoSeeder extends Seeder
             foreach (self::TODOS as $title => $difficulty) {
                 $user->tasks()->create(['title' => $title, 'type' => TaskType::Todo, 'difficulty' => $difficulty]);
             }
+            $goodHabit = $user->tasks()->create(['title' => self::GOOD_HABIT, 'type' => TaskType::Habit, 'difficulty' => TaskDifficulty::Easy]);
+            $badHabit = $user->tasks()->create(['title' => self::BAD_HABIT, 'type' => TaskType::Habit, 'difficulty' => TaskDifficulty::Easy]);
 
             $today = $this->calendar->today($user);
             $user->tasks()->update([
                 'created_at' => $today->subDays(count(self::COMPLETIONS_PER_DAY))->setTime(self::CREATED_AT_HOUR, 0)->utc(),
             ]);
             $this->seedHistory($today, $dailies, $character);
+            $this->seedHabits($today, $goodHabit, $badHabit);
             $this->buyAndWear($character);
             // Purchases changed a locked copy of the row, so the gold here is stale
             $this->shop->markSeen($character->refresh());
+            // The history and the purchases already earned some, the paladin pants among them
+            $this->achievements->award($user);
         });
+    }
+
+    // Habit marks on past days. The pluses give nothing: the history keeps its tuned XP, as if they were
+    // marked past the habit's reward limit. They fall on days that are active anyway, so the streak stays 12
+    private function seedHabits(CarbonImmutable $today, Task $goodHabit, Task $badHabit): void
+    {
+        $days = count(self::COMPLETIONS_PER_DAY);
+
+        for ($index = $days - self::HABIT_PLUS_DAYS; $index < $days; $index++) {
+            for ($plus = 0; $plus < self::PLUSES_PER_DAY; $plus++) {
+                $this->mark($goodHabit, $today->subDays($days - $index), HabitDirection::Up);
+            }
+        }
+
+        foreach (self::MINUS_DAYS as $index) {
+            $this->mark($badHabit, $today->subDays($days - $index), HabitDirection::Down);
+        }
+    }
+
+    private function mark(Task $habit, CarbonImmutable $day, HabitDirection $direction): void
+    {
+        $habit->habitMarks()->create([
+            'period_date' => $day->toDateString(),
+            'direction' => $direction,
+            'created_at' => $day->setTime(self::COMPLETED_AT_HOUR, 0),
+        ]);
     }
 
     /**
@@ -166,10 +212,15 @@ final class DemoSeeder extends Seeder
             ->where('tasks.user_id', $user->id)
             ->orderByDesc('task_completions.period_date')
             ->get(['task_completions.id', 'task_completions.period_date']);
-        $last = $completions->first()?->period_date;
+        // Habit marks move too, so the latest day of both decides; otherwise a newer mark would land in the future
+        $lastMark = DB::table('habit_marks')
+            ->join('tasks', 'tasks.id', '=', 'habit_marks.task_id')
+            ->where('tasks.user_id', $user->id)
+            ->max('habit_marks.period_date');
+        $last = max((string) $completions->first()?->period_date, (string) $lastMark);
         $yesterday = $this->calendar->today($user)->subDay();
 
-        if (! is_string($last) || $last >= $yesterday->toDateString()) {
+        if ($last === '' || $last >= $yesterday->toDateString()) {
             return 0;
         }
 
@@ -186,6 +237,13 @@ final class DemoSeeder extends Seeder
                     [$days, $days, $completion->id],
                 );
             }
+            // A habit takes many marks a day, so nothing unique stands in the way of one statement
+            DB::update(
+                'update habit_marks set period_date = period_date + cast(? as integer),
+                    created_at = created_at + make_interval(days => cast(? as integer))
+                    where task_id in (select id from tasks where user_id = ?)',
+                [$days, $days, $user->id],
+            );
             // A task made or an item bought after the last completion would land in the future, so stop at now
             $now = now();
             DB::update(
@@ -196,6 +254,11 @@ final class DemoSeeder extends Seeder
             DB::update(
                 'update inventory_items set acquired_at = least(acquired_at + make_interval(days => cast(? as integer)), ?)
                     where character_id in (select id from characters where user_id = ?)',
+                [$days, $now, $user->id],
+            );
+            DB::update(
+                'update user_achievements set earned_at = least(earned_at + make_interval(days => cast(? as integer)), ?)
+                    where user_id = ?',
                 [$days, $now, $user->id],
             );
         });

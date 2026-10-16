@@ -35,8 +35,8 @@ final class UpdateTaskRequest extends FormRequest
         return [
             'title' => ['sometimes', 'required', 'string', 'max:'.Config::integer('tasks.title_max_length')],
             'difficulty' => ['sometimes', Rule::enum(TaskDifficulty::class)],
-            // A todo has no schedule
-            'weekdays' => ['sometimes', Rule::prohibitedIf(fn (): bool => $this->task()->type === TaskType::Todo), 'array', 'min:1', 'max:7'],
+            // Only a daily has a schedule
+            'weekdays' => ['sometimes', Rule::prohibitedIf(fn (): bool => $this->task()->type !== TaskType::Daily), 'array', 'min:1', 'max:7'],
             'weekdays.*' => ['integer', 'between:1,7', 'distinct'],
         ];
     }

@@ -19,6 +19,10 @@ const stats: Stats = {
     { date: '2026-10-13', count: 1 },
   ],
   dailies: { days: 30, scheduled: 60, completed: 39, percent: 65 },
+  habits: [
+    { id: 3, title: 'Пить воду', up: 12, down: 0 },
+    { id: 4, title: 'Листать ленту', up: 0, down: 5 },
+  ],
 }
 
 enableAutoUnmount(afterEach)
@@ -60,7 +64,7 @@ describe('StatsView', () => {
     const wrapper = await mountView()
 
     expect(wrapper.findAll('[data-date]')).toHaveLength(2)
-    expect(wrapper.get('[data-testid="heatmap-total"]').text()).toBe('5 задач за 2 дня')
+    expect(wrapper.get('[data-testid="heatmap-total"]').text()).toBe('5 отметок за 2 дня')
   })
 
   it('explains that the share comes later for a new player', async () => {
@@ -73,6 +77,32 @@ describe('StatsView', () => {
 
     expect(wrapper.find('[data-testid="dailies-percent"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="dailies-empty"]').text()).toContain('Пока мало данных')
+  })
+
+  it('lists the pluses and minuses of every habit', async () => {
+    vi.mocked(fetchStats).mockResolvedValue(stats)
+
+    const wrapper = await mountView()
+
+    const rows = wrapper.findAll('[data-testid="habit-stat"]')
+    expect(
+      rows.map((row) => [
+        row.get('span').text(),
+        row.get('[aria-hidden="true"]').text(),
+        row.get('.sr-only').text(),
+      ]),
+    ).toEqual([
+      ['Пить воду', '+12 / −0', 'плюсов 12, минусов 0'],
+      ['Листать ленту', '+0 / −5', 'плюсов 0, минусов 5'],
+    ])
+  })
+
+  it('says there are no habits yet', async () => {
+    vi.mocked(fetchStats).mockResolvedValue({ ...stats, habits: [] })
+
+    const wrapper = await mountView()
+
+    expect(wrapper.get('[data-testid="habits-empty"]').text()).toBe('Привычек пока нет.')
   })
 
   it('says so when the stats could not be loaded', async () => {

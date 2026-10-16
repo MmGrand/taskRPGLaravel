@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\Concerns\RespondsWithTaskChange;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TaskResource;
 use App\Models\Task;
+use App\Models\User;
+use App\Services\AchievementService;
 use App\Services\TaskCompletionService;
 use Illuminate\Http\Request;
 
@@ -16,16 +18,25 @@ final class TaskCompletionController extends Controller
 {
     use EnsuresTaskOwnership, RespondsWithTaskChange;
 
-    public function __construct(private readonly TaskCompletionService $completions) {}
+    public function __construct(
+        private readonly TaskCompletionService $completions,
+        private readonly AchievementService $achievements,
+    ) {}
 
     public function store(Request $request, Task $task): TaskResource
     {
         $this->ensureOwnedBy($request, $task);
+        /** @var User $user */
+        $user = $request->user();
 
         // A daily off its schedule throws CompletionRefused, which bootstrap/app.php turns into a 422
-        return $this->respondWithChange($request, $task, $this->completions->complete($task));
+        $reward = $this->completions->complete($task);
+
+        // Earned before the hero is read for the answer, so its next goal already moved on
+        return $this->respondWithChange($request, $task, $reward, $this->achievements->award($user));
     }
 
+    // An undo never takes an achievement back, so there is nothing to check
     public function destroy(Request $request, Task $task): TaskResource
     {
         $this->ensureOwnedBy($request, $task);

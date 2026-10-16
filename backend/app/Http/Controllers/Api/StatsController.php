@@ -14,7 +14,7 @@ final class StatsController extends Controller
 {
     public function __construct(private readonly StatsService $stats) {}
 
-    // The completion map of the last weeks and the share of dailies done; read only
+    // The completion map of the last weeks, the share of dailies done and the marks of each habit; read only
     public function __invoke(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -29,6 +29,7 @@ final class StatsController extends Controller
                 'completed' => $rate->completed,
                 'percent' => $rate->percent(),
             ],
+            'habits' => $this->stats->habits($user),
         ]]);
     }
 }

@@ -12,6 +12,7 @@ export function makeTestRouter(name: string, view: Component): Router {
     { path: '/character/new', name: 'character-create' },
     { path: '/equipment', name: 'equipment' },
     { path: '/shop', name: 'shop' },
+    { path: '/achievements', name: 'achievements' },
     { path: '/stats', name: 'stats' },
     { path: '/profile', name: 'profile' },
   ]

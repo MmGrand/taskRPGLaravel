@@ -9,6 +9,9 @@ import RewardFloat from '@/components/RewardFloat.vue'
 import TaskCreateForm from '@/components/TaskCreateForm.vue'
 import TaskList from '@/components/TaskList.vue'
 import { useRefreshOnVisible } from '@/composables/useRefreshOnVisible'
+import AchievementBanner from '@/components/AchievementBanner.vue'
+import NextGoal from '@/components/NextGoal.vue'
+import { formatEarned } from '@/game/achievements'
 import { wornItems } from '@/game/equipment'
 import { describeReward, isEmptyReward } from '@/game/progression'
 import { formatUnlocked } from '@/game/shop'
@@ -31,7 +34,7 @@ const rewardNotice = computed(() => {
   if (reward === null) {
     // A new player with tasks but no reward yet learns what the checkbox does
     // Only when there is a checkbox to tick: dailies off their schedule today have none
-    const canTick = tasks.dailiesToday.length + tasks.todos.length > 0
+    const canTick = tasks.dailiesToday.length + tasks.todos.length + tasks.habits.length > 0
 
     return character.value?.progress.xp_total === 0 && canTick ? FIRST_REWARD_HINT : ''
   }
@@ -58,6 +61,8 @@ const levelUp = computed(() => freshReward.value?.levelUp ?? null)
 const unlockedNames = computed(() =>
   tasks.lastReward?.levelUp ? formatUnlocked(character.value?.shop.new_items ?? []) : '',
 )
+const earnedText = computed(() => formatEarned(tasks.lastReward?.achievements ?? []))
+const freshAchievements = computed(() => freshReward.value?.achievements ?? [])
 
 async function loadTasks(): Promise<void> {
   try {
@@ -108,6 +113,11 @@ useRefreshOnVisible(refreshTasks)
         </div>
         <p class="text-2xl font-semibold">{{ character.name }}</p>
         <LevelUpBanner v-if="levelUp !== null" :key="freshReward?.id" :level="levelUp" />
+        <AchievementBanner
+          v-if="freshAchievements.length > 0"
+          :key="`achievement-${freshReward?.id}`"
+          :achievements="freshAchievements"
+        />
         <CharacterStats :character="character" />
         <!-- Always rendered: screen readers announce changes of a live region, not its arrival -->
         <p role="status" class="text-sm text-accent" data-testid="reward-notice">
@@ -117,7 +127,13 @@ useRefreshOnVisible(refreshTasks)
             В магазине открылись: {{ unlockedNames }}.
             <RouterLink :to="{ name: 'shop' }" class="underline">В магазин</RouterLink>
           </template>
+          <template v-if="earnedText">
+            <br />
+            {{ earnedText }}
+            <RouterLink :to="{ name: 'achievements' }" class="underline">К достижениям</RouterLink>
+          </template>
         </p>
+        <NextGoal v-if="character.next_goal" :goal="character.next_goal" />
       </aside>
 
       <main class="flex min-w-0 flex-1 flex-col gap-6">
@@ -133,6 +149,7 @@ useRefreshOnVisible(refreshTasks)
             :later-tasks="tasks.dailiesLater"
             show-progress
           />
+          <TaskList v-if="tasks.habits.length > 0" title="Привычки" :tasks="tasks.habits" />
           <TaskList title="Разовые" :tasks="tasks.todos" />
         </template>
       </main>

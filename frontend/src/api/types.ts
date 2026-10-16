@@ -11,6 +11,8 @@ export interface Item {
   sprite: Tile
   required_level: number
   price: number
+  // Given for an achievement, never sold
+  is_rare: boolean
 }
 
 export interface EquippedItem {
@@ -49,6 +51,18 @@ export interface Reward {
   capped: boolean
 }
 
+// A milestone with its progress; current never passes target
+export interface Achievement {
+  code: string
+  title: string
+  description: string
+  current: number
+  target: number
+  earned_at: string | null
+  // The rare item it gives
+  reward_item: Item | null
+}
+
 export interface Character {
   id: number
   name: string
@@ -59,6 +73,8 @@ export interface Character {
   // Unlocked items the player has not seen in the shop yet
   shop: { new_items: Item[] }
   equipment: EquippedItem[]
+  // The unearned achievement closest to done; null once every one is earned
+  next_goal: Achievement | null
   created_at: string
 }
 
@@ -95,8 +111,16 @@ export interface UpdatePasswordPayload {
   password_confirmation: string
 }
 
-export const TASK_TYPES = ['daily', 'todo'] as const
+export const TASK_TYPES = ['daily', 'todo', 'habit'] as const
 export type TaskType = (typeof TASK_TYPES)[number]
+
+// A plus earns a reward; a minus is only counted
+export type HabitDirection = 'up' | 'down'
+
+export interface HabitCounts {
+  up_today: number
+  down_today: number
+}
 
 export const TASK_DIFFICULTIES = ['easy', 'medium', 'hard'] as const
 export type TaskDifficulty = (typeof TASK_DIFFICULTIES)[number]
@@ -117,6 +141,8 @@ export interface Task {
   // Deleting the task gives a reward back: false past the daily limit or for a todo done earlier
   rewarded_today: boolean
   completed_at: string | null
+  // Today's marks of a habit; null for a daily and a todo
+  habit: HabitCounts | null
   created_at: string
 }
 
@@ -134,16 +160,33 @@ export interface DailyRate {
   percent: number | null
 }
 
+// Marks of one habit over the last days, today included
+export interface HabitStat {
+  id: number
+  title: string
+  up: number
+  down: number
+}
+
 export interface Stats {
-  // From a Monday to today, every day present
+  // From a Monday to today, every day present; completions and habit pluses
   heatmap: HeatmapDay[]
   dailies: DailyRate
+  habits: HabitStat[]
 }
 
 export interface CompletionResult {
   task: Task
   character: Character | null
   reward: Reward | null
+  // Earned by this request
+  achievements: Achievement[]
+}
+
+export interface PurchaseResult {
+  character: Character
+  // Earned by this purchase
+  achievements: Achievement[]
 }
 
 export interface CreateTaskPayload {

@@ -8,4 +8,6 @@ enum TaskType: string
 {
     case Daily = 'daily';
     case Todo = 'todo';
+    // Marked plus or minus any number of times a day, never "done"
+    case Habit = 'habit';
 }

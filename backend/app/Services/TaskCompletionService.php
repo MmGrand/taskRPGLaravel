@@ -11,7 +11,6 @@ use App\Models\Task;
 use App\Models\TaskCompletion;
 use App\ValueObjects\Reward;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 final class TaskCompletionService
@@ -20,16 +19,23 @@ final class TaskCompletionService
         private readonly UserCalendar $calendar,
         private readonly StreakService $streaks,
         private readonly RewardService $rewards,
+        private readonly DailyRewardLimit $limit,
+        private readonly HabitService $habits,
     ) {}
 
     // Idempotent: completing an already completed task changes nothing and gives no reward.
     // Returns what the character got, or null when nothing was given.
-    // Throws CompletionRefused when a daily is not on today's schedule
+    // Throws CompletionRefused when a daily is not on today's schedule or the task is a habit
     public function complete(Task $task): ?Reward
     {
         return DB::transaction(function () use ($task): ?Reward {
             $locked = $this->lock($task);
             $today = $this->calendar->today($task->user);
+
+            // A habit is marked plus or minus, never done
+            if ($locked->type === TaskType::Habit) {
+                throw CompletionRefused::habit();
+            }
 
             if ($this->currentCompletion($task, $today) !== null) {
                 return null;
@@ -43,7 +49,7 @@ final class TaskCompletionService
             $character = $this->lockCharacter($task);
             $reward = match (true) {
                 $character === null => Reward::none(),
-                $this->rewardedOn($task, $today) >= config()->integer('progression.rewards.daily_limit') => Reward::capped(),
+                $this->limit->reached($task->user_id, $today) => Reward::capped(),
                 default => $this->rewards->rewardFor($this->streaks->lengthIncludingToday($task->user), $locked->difficulty),
             };
 
@@ -86,12 +92,13 @@ final class TaskCompletionService
         });
     }
 
-    // Deleting a task takes back today's mark like an undo, so create → complete → delete earns nothing.
-    // Earlier days stay in the history and keep the streak. Returns what was taken, or null
+    // Deleting a task takes back today's mark like an undo, so create → complete → delete earns nothing;
+    // a habit gives back what its marks of today gave. Earlier days stay in the history and keep the streak.
+    // Returns what was taken, or null
     public function delete(Task $task): ?Reward
     {
         return DB::transaction(function () use ($task): ?Reward {
-            $taken = $this->undo($task);
+            $taken = $task->type === TaskType::Habit ? $this->habits->undoToday($task) : $this->undo($task);
             $task->delete();
 
             return $taken;
@@ -109,17 +116,6 @@ final class TaskCompletionService
     private function lockCharacter(Task $task): ?Character
     {
         return Character::query()->where('user_id', $task->user_id)->lockForUpdate()->first();
-    }
-
-    // Counted under the character lock, so parallel completions of one user cannot both take the last slot.
-    // Deleted tasks count too: deletion undoes their mark of today, so only earlier days remain
-    private function rewardedOn(Task $task, CarbonImmutable $day): int
-    {
-        return TaskCompletion::query()
-            ->whereIn('task_id', Task::withTrashed()->where('user_id', $task->user_id)->select('id'))
-            ->where('period_date', $day->toDateString())
-            ->where(fn (Builder $query) => $query->where('xp_awarded', '>', 0)->orWhere('gold_awarded', '>', 0))
-            ->count();
     }
 
     // The completion that makes the task count as done today, if any

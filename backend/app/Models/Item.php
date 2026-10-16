@@ -17,8 +17,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $required_level
  * @property int $price
  * @property bool $is_starter
+ * @property bool $is_rare
  */
-#[Fillable(['code', 'name', 'slot', 'sprite_col', 'sprite_row', 'required_level', 'price', 'is_starter'])]
+#[Fillable(['code', 'name', 'slot', 'sprite_col', 'sprite_row', 'required_level', 'price', 'is_starter', 'is_rare'])]
 final class Item extends Model
 {
     /** @use HasFactory<ItemFactory> */
@@ -38,6 +39,7 @@ final class Item extends Model
             'required_level' => 'integer',
             'price' => 'integer',
             'is_starter' => 'boolean',
+            'is_rare' => 'boolean',
         ];
     }
 }

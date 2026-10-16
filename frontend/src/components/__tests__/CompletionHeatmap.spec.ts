@@ -28,7 +28,7 @@ describe('CompletionHeatmap', () => {
   it('names the day and the count of a cell on hover', () => {
     const wrapper = mountMap()
 
-    expect(wrapper.get('[data-date="2026-09-07"]').attributes('title')).toBe('7 сент: 7 задач')
+    expect(wrapper.get('[data-date="2026-09-07"]').attributes('title')).toBe('7 сент: 7 отметок')
   })
 
   it('sums the map up for screen readers and under the grid', () => {
@@ -36,14 +36,14 @@ describe('CompletionHeatmap', () => {
 
     // 7 on the first day, then 1, 2, 0 repeating over the other 15: 7 + 5 * 3 = 22 on 11 days
     expect(wrapper.get('[data-testid="heatmap"]').attributes('aria-label')).toBe(
-      'Карта выполнений: 22 задачи за 11 дней',
+      'Карта выполнений: 22 отметки за 11 дней',
     )
-    expect(wrapper.get('[data-testid="heatmap-total"]').text()).toBe('22 задачи за 11 дней')
+    expect(wrapper.get('[data-testid="heatmap-total"]').text()).toBe('22 отметки за 11 дней')
   })
 
   it('stays an empty grid for a new player', () => {
     const wrapper = mountMap(days.map((day) => ({ ...day, count: 0 })))
 
-    expect(wrapper.get('[data-testid="heatmap-total"]').text()).toBe('0 задач за 0 дней')
+    expect(wrapper.get('[data-testid="heatmap-total"]').text()).toBe('0 отметок за 0 дней')
   })
 })

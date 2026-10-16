@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  isAchievementList,
   isCharacter,
   isCompletionResponse,
   isInventory,
@@ -11,8 +12,11 @@ import {
 import {
   characterFixture,
   dailyTaskFixture,
+  firstStepFixture,
   headbandFixture,
   inventoryFixture,
+  paladinPantsFixture,
+  streakWeekFixture,
   userFixture,
   woodenSwordFixture,
 } from './fixtures'
@@ -73,6 +77,41 @@ describe('isCharacter', () => {
   })
 })
 
+describe('isCharacter next goal', () => {
+  it('accepts a hero with or without a next goal', () => {
+    expect(isCharacter({ ...characterFixture, next_goal: streakWeekFixture })).toBe(true)
+    expect(isCharacter({ ...characterFixture, next_goal: null })).toBe(true)
+  })
+
+  it('rejects a hero without the next goal key or with a goal it cannot show', () => {
+    const { next_goal: _goal, ...withoutGoal } = characterFixture
+
+    expect(isCharacter(withoutGoal)).toBe(false)
+    expect(isCharacter({ ...characterFixture, next_goal: { code: 'x' } })).toBe(false)
+  })
+})
+
+describe('isItem rarity', () => {
+  it('rejects an item that does not say whether it is rare', () => {
+    const { is_rare: _rare, ...withoutRarity } = headbandFixture
+
+    expect(isInventory([{ item: paladinPantsFixture, acquired_at: '2026-10-14' }])).toBe(true)
+    expect(isInventory([{ item: withoutRarity, acquired_at: '2026-10-14' }])).toBe(false)
+  })
+})
+
+describe('isAchievementList', () => {
+  it('accepts earned and open achievements', () => {
+    expect(isAchievementList([firstStepFixture, streakWeekFixture])).toBe(true)
+    expect(isAchievementList([])).toBe(true)
+  })
+
+  it('rejects anything but a list of achievements', () => {
+    expect(isAchievementList(null)).toBe(false)
+    expect(isAchievementList([{ ...firstStepFixture, earned_at: 7 }])).toBe(false)
+  })
+})
+
 describe('isCharacter progress', () => {
   it('rejects a hero without progress, gold or streak it can show', () => {
     const { progress: _progress, ...withoutProgress } = characterFixture
@@ -99,11 +138,36 @@ describe('isCompletionResponse', () => {
         data: dailyTaskFixture,
         character: characterFixture,
         reward: { xp: -10, gold: -5, capped: false },
+        achievements: [firstStepFixture, streakWeekFixture],
       }),
     ).toBe(true)
-    expect(isCompletionResponse({ data: dailyTaskFixture, character: null, reward: null })).toBe(
-      true,
-    )
+    expect(
+      isCompletionResponse({
+        data: dailyTaskFixture,
+        character: null,
+        reward: null,
+        achievements: [],
+      }),
+    ).toBe(true)
+  })
+
+  it('rejects an achievement it cannot show', () => {
+    expect(
+      isCompletionResponse({
+        data: dailyTaskFixture,
+        character: null,
+        reward: null,
+        achievements: [{ ...firstStepFixture, current: -1 }],
+      }),
+    ).toBe(false)
+    expect(
+      isCompletionResponse({
+        data: dailyTaskFixture,
+        character: null,
+        reward: null,
+        achievements: [{ ...streakWeekFixture, reward_item: { name: 'Без слота' } }],
+      }),
+    ).toBe(false)
   })
 
   it('rejects missing keys and a reward it cannot show', () => {

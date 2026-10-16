@@ -22,7 +22,7 @@ function signed(value: number): string {
   return value < 0 ? `−${Math.abs(value)}` : `+${value}`
 }
 
-export const REWARD_LIMIT_MESSAGE = 'Награды на сегодня закончились — задача всё равно засчитана.'
+export const REWARD_LIMIT_MESSAGE = 'Сегодня за это уже без награды — отметка всё равно засчитана.'
 
 // A part that did not change is left out: spent gold cannot be taken back, and "+0" would read as a gain
 export function formatReward(reward: Reward): string {

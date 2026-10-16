@@ -7,17 +7,21 @@ import {
   createTask,
   deleteTask,
   fetchTasks,
+  markHabit,
   saveTaskOrder,
   uncompleteTask,
+  undoHabitMark,
   updateTask,
 } from '@/api/tasks'
 import {
   characterFixture,
   dailyTaskFixture,
+  habitTaskFixture,
+  streakWeekFixture,
   todoTaskFixture,
   userFixture,
 } from '@/api/__tests__/fixtures'
-import type { Character, Reward, Task } from '@/api/types'
+import type { Achievement, Character, Reward, Task } from '@/api/types'
 import { useAuthStore } from '@/stores/auth'
 
 vi.mock('@/api/tasks', () => ({
@@ -28,6 +32,8 @@ vi.mock('@/api/tasks', () => ({
   deleteTask: vi.fn<typeof deleteTask>(),
   completeTask: vi.fn<typeof completeTask>(),
   uncompleteTask: vi.fn<typeof uncompleteTask>(),
+  markHabit: vi.fn<typeof markHabit>(),
+  undoHabitMark: vi.fn<typeof undoHabitMark>(),
 }))
 
 const completedDaily = {
@@ -36,8 +42,13 @@ const completedDaily = {
   completed_at: '2026-10-13T12:00:00+00:00',
 }
 
-function result(task: Task, character: Character | null, reward: Reward | null) {
-  return { task, character, reward }
+function result(
+  task: Task,
+  character: Character | null,
+  reward: Reward | null,
+  achievements: Achievement[] = [],
+) {
+  return { task, character, reward, achievements }
 }
 
 const levelTwoHero: Character = {
@@ -112,6 +123,7 @@ describe('tasks store', () => {
       gold: 5,
       capped: false,
       levelUp: null,
+      achievements: [],
       id: expect.any(Number),
     })
   })
@@ -130,6 +142,7 @@ describe('tasks store', () => {
       gold: 5,
       capped: false,
       levelUp: 2,
+      achievements: [],
       id: expect.any(Number),
     })
   })
@@ -148,6 +161,7 @@ describe('tasks store', () => {
       gold: -5,
       capped: false,
       levelUp: null,
+      achievements: [],
       id: expect.any(Number),
     })
   })
@@ -180,6 +194,92 @@ describe('tasks store', () => {
 
     expect(store.lastReward).toBeNull()
     expect(auth.user?.character).toBeNull()
+  })
+
+  it('splits habits from the other tasks', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([dailyTaskFixture, habitTaskFixture, todoTaskFixture])
+    const store = useTasksStore()
+
+    await store.load()
+
+    expect(store.habits).toEqual([habitTaskFixture])
+    expect(store.dailies).toEqual([dailyTaskFixture])
+    expect(store.todos).toEqual([todoTaskFixture])
+  })
+
+  it('marks a habit plus and takes the reward like a completion', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([habitTaskFixture])
+    const store = useTasksStore()
+    await store.load()
+    useAuthStore().user = { ...userFixture, character: characterFixture }
+    const plussed = { ...habitTaskFixture, habit: { up_today: 1, down_today: 0 } }
+    vi.mocked(markHabit).mockResolvedValue(
+      result(plussed, levelTwoHero, { xp: 5, gold: 2, capped: false }),
+    )
+
+    await store.markHabit(3, 'up')
+
+    expect(markHabit).toHaveBeenCalledWith(3, 'up')
+    expect(store.habits).toEqual([plussed])
+    expect(useAuthStore().user?.character).toEqual(levelTwoHero)
+    expect(store.lastReward).toMatchObject({ xp: 5, gold: 2, levelUp: 2 })
+  })
+
+  it('clears the reward line after a minus, which gives nothing', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([habitTaskFixture])
+    const store = useTasksStore()
+    await store.load()
+    vi.mocked(markHabit)
+      .mockResolvedValueOnce(result(habitTaskFixture, null, { xp: 5, gold: 2, capped: false }))
+      .mockResolvedValueOnce(
+        result({ ...habitTaskFixture, habit: { up_today: 1, down_today: 1 } }, null, null),
+      )
+    await store.markHabit(3, 'up')
+
+    await store.markHabit(3, 'down')
+
+    expect(store.lastReward).toBeNull()
+    expect(store.habits[0]?.habit).toEqual({ up_today: 1, down_today: 1 })
+  })
+
+  it('keeps the achievements a change earned in the notice', async () => {
+    const store = await loadedStore()
+    const earned = { ...streakWeekFixture, earned_at: '2026-10-13T12:00:00+00:00' }
+    vi.mocked(completeTask).mockResolvedValue(
+      result(completedDaily, characterFixture, { xp: 10, gold: 5, capped: false }, [earned]),
+    )
+
+    await store.setCompleted(1, true)
+
+    expect(store.lastReward?.achievements).toEqual([earned])
+  })
+
+  it('announces an achievement even when the change gave no reward', async () => {
+    const store = await loadedStore()
+    vi.mocked(completeTask).mockResolvedValue(
+      result(completedDaily, null, null, [streakWeekFixture]),
+    )
+
+    await store.setCompleted(1, true)
+
+    expect(store.lastReward).toMatchObject({ xp: 0, gold: 0, achievements: [streakWeekFixture] })
+  })
+
+  it('takes back the latest habit mark', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([
+      { ...habitTaskFixture, habit: { up_today: 1, down_today: 0 } },
+    ])
+    const store = useTasksStore()
+    await store.load()
+    vi.mocked(undoHabitMark).mockResolvedValue(
+      result(habitTaskFixture, null, { xp: -5, gold: -2, capped: false }),
+    )
+
+    await store.undoHabit(3)
+
+    expect(undoHabitMark).toHaveBeenCalledWith(3)
+    expect(store.habits).toEqual([habitTaskFixture])
+    expect(store.lastReward).toMatchObject({ xp: -5, gold: -2 })
   })
 
   it('replaces an updated task', async () => {

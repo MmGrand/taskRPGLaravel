@@ -13,4 +13,9 @@ final class CompletionRefused extends DomainException
     {
         return new self(__('tasks.not_scheduled'));
     }
+
+    public static function habit(): self
+    {
+        return new self(__('tasks.habit_completion'));
+    }
 }

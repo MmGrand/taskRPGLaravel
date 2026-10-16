@@ -26,6 +26,8 @@ final class ItemResource extends JsonResource
             'sprite' => ['col' => $this->sprite_col, 'row' => $this->sprite_row],
             'required_level' => $this->required_level,
             'price' => $this->price,
+            // Given for an achievement, never sold
+            'is_rare' => $this->is_rare,
         ];
     }
 }

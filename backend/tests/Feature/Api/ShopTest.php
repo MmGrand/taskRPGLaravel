@@ -49,6 +49,29 @@ it('lists the whole catalog ordered by level', function () {
     expect($levels)->toBe(collect($levels)->sort()->values()->all());
 });
 
+it('leaves rare items out of the shop', function () {
+    // Act
+    $catalog = $this->actingAs($this->user)->getJson('/api/shop')->json('data');
+
+    // Assert
+    expect(collect($catalog)->pluck('item.is_rare')->unique()->all())->toBe([false])
+        ->and(collect($catalog)->pluck('item.code'))->not->toContain('frost_axe');
+});
+
+it('never reports a rare item as new in the shop', function () {
+    // Arrange: a rare item of level 2 would otherwise be unlocked by this level
+    Item::factory()->rare()->create(['code' => 'rare_of_level_two', 'required_level' => 2]);
+    Character::query()->whereKey($this->character->id)->update(['xp' => LEVEL_TWO_XP]);
+
+    // Act
+    $response = $this->actingAs($this->user)->getJson('/api/character');
+
+    // Assert
+    expect(collect($response->json('data.shop.new_items'))->pluck('code'))
+        ->toContain('green_bandana')
+        ->not->toContain('rare_of_level_two');
+});
+
 it('marks owned items and locks items above the level', function () {
     // Act
     $catalog = $this->actingAs($this->user)->getJson('/api/shop')->json('data');

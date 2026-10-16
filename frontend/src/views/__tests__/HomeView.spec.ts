@@ -9,6 +9,8 @@ import {
   dailyTaskFixture,
   goldenHelmetFixture,
   greenBandanaFixture,
+  habitTaskFixture,
+  streakWeekFixture,
   todoTaskFixture,
   userFixture,
   woodenSwordFixture,
@@ -20,8 +22,10 @@ import {
   createTask,
   deleteTask,
   fetchTasks,
+  markHabit,
   saveTaskOrder,
   uncompleteTask,
+  undoHabitMark,
   updateTask,
 } from '@/api/tasks'
 import { useAuthStore } from '@/stores/auth'
@@ -41,6 +45,8 @@ vi.mock('@/api/tasks', () => ({
   deleteTask: vi.fn<typeof deleteTask>(),
   completeTask: vi.fn<typeof completeTask>(),
   uncompleteTask: vi.fn<typeof uncompleteTask>(),
+  markHabit: vi.fn<typeof markHabit>(),
+  undoHabitMark: vi.fn<typeof undoHabitMark>(),
 }))
 
 // Mounted views keep their visibilitychange listeners on document until unmounted
@@ -75,6 +81,73 @@ describe('HomeView', () => {
     expect(wrapper.text()).toContain(characterFixture.name)
     expect(wrapper.get('section[aria-label="Ежедневные"]').text()).toContain('30 минут Go')
     expect(wrapper.get('section[aria-label="Разовые"]').text()).toContain('Купить гантели')
+  })
+
+  it('lists habits apart and only once there are some', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([dailyTaskFixture])
+    const plain = await mountView()
+    expect(plain.wrapper.find('section[aria-label="Привычки"]').exists()).toBe(false)
+    plain.wrapper.unmount()
+
+    vi.mocked(fetchTasks).mockResolvedValue([dailyTaskFixture, habitTaskFixture])
+    const { wrapper } = await mountView()
+
+    expect(wrapper.get('section[aria-label="Привычки"]').text()).toContain('Пить воду')
+  })
+
+  it('marks a habit plus and shows what it gave', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([habitTaskFixture])
+    vi.mocked(markHabit).mockResolvedValue({
+      task: { ...habitTaskFixture, habit: { up_today: 1, down_today: 0 } },
+      character: { ...characterFixture, gold: 2 },
+      reward: { xp: 5, gold: 2, capped: false },
+      achievements: [],
+    })
+    const { wrapper } = await mountView()
+
+    await wrapper.get('[aria-label="Плюс: Пить воду"]').trigger('click')
+    await flushPromises()
+
+    expect(markHabit).toHaveBeenCalledWith(habitTaskFixture.id, 'up')
+    expect(wrapper.get('[data-testid="habit-counts"]').text()).toBe('+1 / −0')
+    expect(wrapper.get('[data-testid="reward-notice"]').text()).toContain('+5 XP · +2 золота')
+  })
+
+  it('announces an achievement with its rare item and celebrates it', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([dailyTaskFixture])
+    const earned = { ...streakWeekFixture, current: 7, earned_at: '2026-10-13T12:00:00+00:00' }
+    vi.mocked(completeTask).mockResolvedValue({
+      task: { ...dailyTaskFixture, is_completed: true },
+      character: characterFixture,
+      reward: { xp: 10, gold: 5, capped: false },
+      achievements: [earned],
+    })
+    const { wrapper } = await mountView()
+
+    await wrapper.get('input[aria-label^="Выполнено"]').trigger('click')
+    await flushPromises()
+
+    const notice = wrapper.get('[data-testid="reward-notice"]')
+    expect(notice.text()).toContain(
+      'Достижение: Неделя без пропусков! Получен предмет: Штаны паладина.',
+    )
+    expect(notice.get('a[href="/achievements"]').text()).toBe('К достижениям')
+    expect(wrapper.get('[data-testid="achievement-banner"]').text()).toContain(
+      'Неделя без пропусков',
+    )
+  })
+
+  it('shows the next goal under the hero, and nothing once every goal is reached', async () => {
+    vi.mocked(fetchTasks).mockResolvedValue([])
+    const withGoal = await mountView({ ...characterFixture, next_goal: streakWeekFixture })
+    expect(withGoal.wrapper.get('[data-testid="next-goal"]').text()).toContain(
+      'Неделя без пропусков',
+    )
+    withGoal.wrapper.unmount()
+
+    const { wrapper } = await mountView()
+
+    expect(wrapper.find('[data-testid="next-goal"]').exists()).toBe(false)
   })
 
   it('welcomes a player without tasks and hides the welcome once there are some', async () => {
@@ -137,6 +210,7 @@ describe('HomeView', () => {
         shop: { new_items: [greenBandanaFixture, goldenHelmetFixture] },
       },
       reward: { xp: 10, gold: 5, capped: false },
+      achievements: [],
     })
     const { wrapper } = await mountView()
 
@@ -157,6 +231,7 @@ describe('HomeView', () => {
       task: { ...dailyTaskFixture, is_completed: true, completed_at: '2026-10-13T12:00:00+00:00' },
       character: waiting,
       reward: { xp: 10, gold: 5, capped: false },
+      achievements: [],
     })
     const { wrapper } = await mountView(waiting)
 
@@ -229,6 +304,7 @@ describe('HomeView', () => {
       task: { ...dailyTaskFixture, is_completed: true, completed_at: '2026-10-13T12:00:00+00:00' },
       character: levelTwoHero,
       reward: { xp: 10, gold: 5, capped: false },
+      achievements: [],
     })
     const { wrapper } = await mountView()
 
@@ -247,6 +323,7 @@ describe('HomeView', () => {
       task: { ...dailyTaskFixture, is_completed: true },
       character: characterFixture,
       reward: { xp: 0, gold: 0, capped: true },
+      achievements: [],
     })
     const { wrapper } = await mountView()
 
@@ -254,7 +331,7 @@ describe('HomeView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="reward-notice"]').text()).toBe(
-      'Награды на сегодня закончились — задача всё равно засчитана.',
+      'Сегодня за это уже без награды — отметка всё равно засчитана.',
     )
     expect(wrapper.find('[data-testid="reward-float"]').exists()).toBe(false)
   })
@@ -270,11 +347,13 @@ describe('HomeView', () => {
         task: { ...dailyTaskFixture, is_completed: true },
         character: levelTwoHero,
         reward: { xp: 10, gold: 5, capped: false },
+        achievements: [],
       })
       .mockResolvedValueOnce({
         task: { ...todoTaskFixture, is_completed: true },
         character: levelTwoHero,
         reward: { xp: 10, gold: 5, capped: false },
+        achievements: [],
       })
     const { wrapper } = await mountView()
     const checkboxes = wrapper.findAll('input[aria-label^="Выполнено"]')
@@ -304,7 +383,14 @@ describe('HomeView', () => {
     setActivePinia(pinia)
     useAuthStore().user = { ...userFixture, character: characterFixture }
     // A level up that happened before the player went to the shop and back
-    useTasksStore().lastReward = { xp: 20, gold: 10, capped: false, levelUp: 5, id: 3 }
+    useTasksStore().lastReward = {
+      xp: 20,
+      gold: 10,
+      capped: false,
+      levelUp: 5,
+      achievements: [],
+      id: 3,
+    }
     const router = makeTestRouter('home', HomeView)
     await router.push('/')
     await router.isReady()
@@ -329,6 +415,7 @@ describe('HomeView', () => {
       task: dailyTaskFixture,
       character: characterFixture,
       reward: { xp: -10, gold: -5, capped: false },
+      achievements: [],
     })
     const { wrapper } = await mountView()
 

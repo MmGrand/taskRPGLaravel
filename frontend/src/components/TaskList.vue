@@ -138,6 +138,8 @@ async function move(index: number, step: -1 | 1): Promise<void> {
         @toggle="(completed) => run(() => tasksStore.setCompleted(task.id, completed))"
         @remove="run(() => tasksStore.remove(task.id))"
         @move="(step) => move(index, step)"
+        @mark="(direction) => run(() => tasksStore.markHabit(task.id, direction))"
+        @undo-mark="run(() => tasksStore.undoHabit(task.id))"
       />
     </VueDraggable>
     <!-- With dailies waiting for other days the list is not empty, just free today -->

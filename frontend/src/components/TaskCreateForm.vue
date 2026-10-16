@@ -12,6 +12,7 @@ import { useTasksStore } from '@/stores/tasks'
 const TYPE_OPTIONS: readonly { value: TaskType; label: string }[] = [
   { value: 'daily', label: 'Ежедневная' },
   { value: 'todo', label: 'Разовая' },
+  { value: 'habit', label: 'Привычка' },
 ]
 
 const tasks = useTasksStore()

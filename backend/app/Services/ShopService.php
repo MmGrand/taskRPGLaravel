@@ -18,6 +18,10 @@ final class ShopService
     // Spends gold and adds the item to the inventory, or refuses without changing anything
     public function buy(Character $character, Item $item): void
     {
+        if ($item->is_rare) {
+            throw PurchaseRefused::notForSale();
+        }
+
         DB::transaction(function () use ($character, $item): void {
             // Parallel purchases and rewards change the same gold; the lock makes the checks hold until commit
             $locked = Character::query()->whereKey($character->id)->lockForUpdate()->firstOrFail();
@@ -41,13 +45,14 @@ final class ShopService
     }
 
     /**
-     * Unlocked items the player has not seen in the shop yet and does not own.
+     * Unlocked items the player has not seen in the shop yet and does not own. Rare items are never in the shop.
      *
      * @return Collection<int, Item>
      */
     public function newItemsFor(Character $character): Collection
     {
         return Item::query()
+            ->where('is_rare', false)
             ->where('required_level', '>', $character->shop_seen_level)
             ->where('required_level', '<=', $this->progression->progressFor($character->xp)->level)
             ->whereNotExists(fn (QueryBuilder $owned) => $owned->from('inventory_items')

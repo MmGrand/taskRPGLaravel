@@ -34,6 +34,7 @@ final class ItemFactory extends Factory
             'required_level' => 1,
             'price' => 0,
             'is_starter' => false,
+            'is_rare' => false,
         ];
     }
 
@@ -45,5 +46,10 @@ final class ItemFactory extends Factory
     public function starter(): static
     {
         return $this->state(fn (array $attributes) => ['is_starter' => true]);
+    }
+
+    public function rare(): static
+    {
+        return $this->state(fn (array $attributes) => ['is_rare' => true]);
     }
 }

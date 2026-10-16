@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 use App\Enums\TaskDifficulty;
 use App\Enums\TaskType;
+use App\Models\HabitMark;
 use App\Models\Task;
 use App\Models\TaskCompletion;
 use App\Models\User;
 use App\ValueObjects\Weekdays;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
@@ -28,7 +30,67 @@ it('creates a task of either type', function (string $type) {
         ->assertJsonPath('data.is_completed', false)
         ->assertJsonPath('data.completed_at', null);
     $this->assertDatabaseHas('tasks', ['user_id' => $this->user->id, 'title' => '30 минут Go', 'type' => $type]);
+})->with(['daily', 'todo', 'habit']);
+
+it('creates a habit with nothing marked today', function () {
+    // Act
+    $response = $this->actingAs($this->user)->postJson('/api/tasks', ['title' => 'Пить воду', 'type' => 'habit']);
+
+    // Assert
+    $response->assertCreated()
+        ->assertJsonPath('data.habit', ['up_today' => 0, 'down_today' => 0])
+        ->assertJsonPath('data.scheduled_today', true)
+        ->assertJsonPath('data.rewarded_today', false);
+});
+
+it('leaves the habit counts out of a daily and a todo', function (string $type) {
+    // Act
+    $response = $this->actingAs($this->user)->postJson('/api/tasks', ['title' => 'Зарядка', 'type' => $type]);
+
+    // Assert
+    $response->assertCreated()->assertJsonPath('data.habit', null);
 })->with(['daily', 'todo']);
+
+it('lists a habit with the marks of today only', function () {
+    // Arrange
+    $this->travelTo(CarbonImmutable::parse('2026-10-13 12:00:00', 'UTC'));
+    $habit = Task::factory()->for($this->user)->habit()->create();
+    HabitMark::factory()->for($habit)->on('2026-10-13')->count(2)->rewarded(5, 4)->create();
+    HabitMark::factory()->for($habit)->on('2026-10-13')->down()->create();
+    HabitMark::factory()->for($habit)->on('2026-10-12')->count(3)->create();
+
+    // Act
+    $response = $this->actingAs($this->user)->getJson('/api/tasks');
+
+    // Assert
+    $response->assertOk()
+        ->assertJsonPath('data.0.habit', ['up_today' => 2, 'down_today' => 1])
+        ->assertJsonPath('data.0.is_completed', false)
+        ->assertJsonPath('data.0.rewarded_today', true);
+});
+
+it('counts a habit towards the task limit', function () {
+    // Arrange
+    config(['tasks.max_active_per_user' => 1]);
+    Task::factory()->for($this->user)->habit()->create();
+
+    // Act
+    $response = $this->actingAs($this->user)->postJson('/api/tasks', ['title' => 'Ещё одна', 'type' => 'daily']);
+
+    // Assert
+    $response->assertUnprocessable();
+});
+
+it('refuses weekdays for a habit on update', function () {
+    // Arrange
+    $habit = Task::factory()->for($this->user)->habit()->create();
+
+    // Act
+    $response = $this->actingAs($this->user)->patchJson("/api/tasks/{$habit->id}", ['weekdays' => [1]]);
+
+    // Assert
+    $response->assertUnprocessable()->assertJsonValidationErrors(['weekdays']);
+});
 
 it('accepts emoji in the title', function () {
     // Act
@@ -49,10 +111,11 @@ it('rejects invalid task data', function (array $payload, string $field) {
     'empty title' => [['title' => '', 'type' => 'daily'], 'title'],
     'blank title' => [['title' => '   ', 'type' => 'daily'], 'title'],
     'too long title' => [['title' => str_repeat('a', 121), 'type' => 'daily'], 'title'],
-    'unknown type' => [['title' => 'Зарядка', 'type' => 'habit'], 'type'],
+    'unknown type' => [['title' => 'Зарядка', 'type' => 'weekly'], 'type'],
     'missing type' => [['title' => 'Зарядка'], 'type'],
     'unknown difficulty' => [['title' => 'Зарядка', 'type' => 'daily', 'difficulty' => 'epic'], 'difficulty'],
     'weekdays for a todo' => [['title' => 'Зарядка', 'type' => 'todo', 'weekdays' => [1]], 'weekdays'],
+    'weekdays for a habit' => [['title' => 'Пить воду', 'type' => 'habit', 'weekdays' => [1]], 'weekdays'],
     'empty weekdays' => [['title' => 'Зарядка', 'type' => 'daily', 'weekdays' => []], 'weekdays'],
     'weekday past sunday' => [['title' => 'Зарядка', 'type' => 'daily', 'weekdays' => [8]], 'weekdays.0'],
     'weekday as a name' => [['title' => 'Зарядка', 'type' => 'daily', 'weekdays' => ['пн']], 'weekdays.0'],

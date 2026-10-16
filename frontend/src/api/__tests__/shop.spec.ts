@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { http } from '../http'
 import { buyItem, fetchShop, markShopSeen } from '../shop'
-import { characterFixture, greenBandanaFixture } from './fixtures'
+import { characterFixture, firstStepFixture, greenBandanaFixture } from './fixtures'
 
 vi.mock('../http', () => ({
   http: {
@@ -36,10 +36,15 @@ describe('shop api', () => {
     await expect(fetchShop()).rejects.toThrow('Unexpected shop response')
   })
 
-  it('buys an item and returns the hero', async () => {
-    postMock.mockResolvedValue({ data: { data: { ...characterFixture, gold: 10 } } })
+  it('buys an item and returns the hero with what the purchase earned', async () => {
+    postMock.mockResolvedValue({
+      data: { data: { ...characterFixture, gold: 10 }, achievements: [firstStepFixture] },
+    })
 
-    await expect(buyItem(2)).resolves.toEqual({ ...characterFixture, gold: 10 })
+    await expect(buyItem(2)).resolves.toEqual({
+      character: { ...characterFixture, gold: 10 },
+      achievements: [firstStepFixture],
+    })
     expect(postMock).toHaveBeenCalledWith('/shop/purchases', { item_id: 2 })
   })
 
@@ -52,10 +57,16 @@ describe('shop api', () => {
 
   it('rejects a hero it cannot render', async () => {
     const { shop: _shop, ...withoutShop } = characterFixture
-    postMock.mockResolvedValue({ data: { data: withoutShop } })
+    postMock.mockResolvedValue({ data: { data: withoutShop, achievements: [] } })
     putMock.mockResolvedValue({ data: { data: withoutShop } })
 
-    await expect(buyItem(2)).rejects.toThrow('Unexpected character response')
+    await expect(buyItem(2)).rejects.toThrow('Unexpected purchase response')
     await expect(markShopSeen()).rejects.toThrow('Unexpected character response')
+  })
+
+  it('rejects a purchase answer without the earned achievements', async () => {
+    postMock.mockResolvedValue({ data: { data: characterFixture } })
+
+    await expect(buyItem(2)).rejects.toThrow('Unexpected purchase response')
   })
 })

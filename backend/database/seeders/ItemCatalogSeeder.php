@@ -48,28 +48,44 @@ final class ItemCatalogSeeder extends Seeder
         ['knight_shield', 'Рыцарский щит', 'shield', 38, 4, 8, 220, false],
     ];
 
+    // code, name, slot, sprite col, sprite row. One per slot, given for an achievement
+    // (App\Achievements\AchievementCatalog) and never sold, so they need no level and no price.
+    // Tiles the shop catalog does not use, checked on a character like the ones above.
+    private const array RARE = [
+        ['valkyrie_helmet', 'Шлем валькирии', 'head', 30, 7],
+        ['amethyst_armor', 'Аметистовый доспех', 'body', 16, 4],
+        ['paladin_pants', 'Штаны паладина', 'legs', 3, 2],
+        ['frost_axe', 'Морозный топор', 'weapon', 49, 8],
+        ['hero_shield', 'Щит героя', 'shield', 37, 3],
+    ];
+
     /**
      * Seed the item catalog.
      */
     public function run(StarterKit $starterKit): void
     {
         $now = now();
+        $row = fn (array $item, int $level, int $price, bool $starter, bool $rare): array => [
+            'code' => $item[0],
+            'name' => $item[1],
+            'slot' => $item[2],
+            'sprite_col' => $item[3],
+            'sprite_row' => $item[4],
+            'required_level' => $level,
+            'price' => $price,
+            'is_starter' => $starter,
+            'is_rare' => $rare,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
 
         Item::query()->upsert(
-            array_map(fn (array $row): array => [
-                'code' => $row[0],
-                'name' => $row[1],
-                'slot' => $row[2],
-                'sprite_col' => $row[3],
-                'sprite_row' => $row[4],
-                'required_level' => $row[5],
-                'price' => $row[6],
-                'is_starter' => $row[7],
-                'created_at' => $now,
-                'updated_at' => $now,
-            ], self::CATALOG),
+            [
+                ...array_map(fn (array $item): array => $row($item, $item[5], $item[6], $item[7], false), self::CATALOG),
+                ...array_map(fn (array $item): array => $row($item, 1, 0, false, true), self::RARE),
+            ],
             ['code'],
-            ['name', 'slot', 'sprite_col', 'sprite_row', 'required_level', 'price', 'is_starter', 'updated_at'],
+            ['name', 'slot', 'sprite_col', 'sprite_row', 'required_level', 'price', 'is_starter', 'is_rare', 'updated_at'],
         );
 
         // Characters created before the catalog existed get their starter kit too

@@ -16,6 +16,7 @@ const stats: Stats = {
     { date: '2026-10-13', count: 0 },
   ],
   dailies: { days: 30, scheduled: 60, completed: 39, percent: 65 },
+  habits: [{ id: 3, title: 'Пить воду', up: 12, down: 0 }],
 }
 
 describe('stats api', () => {

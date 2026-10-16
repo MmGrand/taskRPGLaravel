@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\HabitMark;
 use App\Models\Task;
 use App\Models\TaskCompletion;
 use App\Models\User;
@@ -59,6 +60,20 @@ it('reads the stats with a constant number of queries', function () {
 
     // Assert
     expect($withSixDailies)->toBe($withOneDaily);
+});
+
+it('answers with the habits of the last thirty days', function () {
+    // Arrange
+    $habit = Task::factory()->for($this->user)->habit()->create(['title' => 'Пить воду']);
+    HabitMark::factory()->for($habit)->on('2026-10-13')->create();
+
+    // Act
+    $response = $this->actingAs($this->user)->getJson('/api/stats');
+
+    // Assert
+    $response->assertOk()->assertJsonPath('data.habits', [
+        ['id' => $habit->id, 'title' => 'Пить воду', 'up' => 1, 'down' => 0],
+    ]);
 });
 
 it('requires authentication', function () {

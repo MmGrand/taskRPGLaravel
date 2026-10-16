@@ -27,7 +27,8 @@ final class BalanceSimulator
     public function simulate(int $tasksPerDay, int $days, TaskDifficulty $difficulty, Collection $catalog): Simulation
     {
         $rewarded = min($tasksPerDay, config()->integer('progression.rewards.daily_limit'));
-        $toBuy = $catalog->reject(fn (Item $item): bool => $item->is_starter)
+        // Starter items are owned already and rare ones are never sold
+        $toBuy = $catalog->reject(fn (Item $item): bool => $item->is_starter || $item->is_rare)
             ->sortBy([['price', 'asc'], ['required_level', 'asc'], ['id', 'asc']])
             ->values();
         $xp = 0;

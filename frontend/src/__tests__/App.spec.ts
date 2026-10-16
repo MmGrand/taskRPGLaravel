@@ -28,6 +28,12 @@ async function mountAt(path: string) {
       { path: '/', name: 'home', component: Page, meta: { requiresCharacter: true } },
       { path: '/shop', name: 'shop', component: Page, meta: { requiresCharacter: true } },
       { path: '/equipment', name: 'equipment', component: Page, meta: { requiresCharacter: true } },
+      {
+        path: '/achievements',
+        name: 'achievements',
+        component: Page,
+        meta: { requiresCharacter: true },
+      },
       { path: '/stats', name: 'stats', component: Page, meta: { requiresCharacter: true } },
       { path: '/profile', name: 'profile', component: Page, meta: { requiresCharacter: true } },
       { path: '/login', name: 'login', component: Page, meta: { guestOnly: true } },

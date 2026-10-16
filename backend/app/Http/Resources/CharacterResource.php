@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\Character;
+use App\Services\AchievementService;
 use App\Services\ProgressionService;
 use App\Services\ShopService;
 use App\Services\StreakService;
@@ -23,6 +24,7 @@ final class CharacterResource extends JsonResource
     {
         $progress = app(ProgressionService::class)->progressFor($this->xp);
         $streak = app(StreakService::class)->current($this->user);
+        $goal = app(AchievementService::class)->nextGoal($this->user, $this->resource);
 
         return [
             'id' => $this->id,
@@ -48,6 +50,8 @@ final class CharacterResource extends JsonResource
                 'new_items' => ItemResource::collection(app(ShopService::class)->newItemsFor($this->resource)),
             ],
             'equipment' => EquippedItemResource::collection($this->equippedItems),
+            // Something to aim for besides gold at any level; null once every achievement is earned
+            'next_goal' => $goal === null ? null : (new AchievementResource($goal))->resolve($request),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

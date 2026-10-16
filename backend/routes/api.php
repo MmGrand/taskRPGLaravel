@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\AchievementController;
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\LogoutController;
 use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\CharacterController;
 use App\Http\Controllers\Api\CurrentUserController;
 use App\Http\Controllers\Api\EquipmentController;
+use App\Http\Controllers\Api\HabitMarkController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\PurchaseController;
@@ -40,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/character/shop-seen', ShopVisitController::class);
 
     Route::get('/stats', StatsController::class);
+    Route::get('/achievements', AchievementController::class);
 
     Route::get('/shop', ShopController::class);
     Route::post('/shop/purchases', PurchaseController::class);
@@ -52,4 +55,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
     Route::put('/tasks/{task}/completion', [TaskCompletionController::class, 'store']);
     Route::delete('/tasks/{task}/completion', [TaskCompletionController::class, 'destroy']);
+    Route::post('/tasks/{task}/habit-marks', [HabitMarkController::class, 'store']);
+    Route::delete('/tasks/{task}/habit-marks/latest', [HabitMarkController::class, 'destroy']);
 });

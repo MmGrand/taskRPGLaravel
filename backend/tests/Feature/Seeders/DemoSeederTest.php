@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Seeders\Demo;
 
+use App\Enums\HabitDirection;
+use App\Models\HabitMark;
 use App\Models\Item;
 use App\Models\Task;
 use App\Models\TaskCompletion;
@@ -86,7 +88,68 @@ it('wears the bought items and leaves today open', function () {
         ->and($character['shop']['new_items'])->toBe([])
         ->and($tasks->where('type', 'daily'))->toHaveCount(5)
         ->and($tasks->where('type', 'todo'))->toHaveCount(3)
+        ->and($tasks->where('type', 'habit'))->toHaveCount(2)
         ->and($tasks->where('is_completed', true))->toBeEmpty();
+});
+
+it('gives the habits a history of pluses and minuses that changed no reward', function () {
+    // Arrange
+    seedDemo($this);
+
+    // Act
+    $marks = HabitMark::query()->with('task')->get();
+
+    // Assert
+    expect($marks->where('direction', HabitDirection::Up)->pluck('task.title')->unique()->all())->toBe(['Выпить стакан воды'])
+        ->and($marks->where('direction', HabitDirection::Up))->toHaveCount(10)
+        ->and($marks->where('direction', HabitDirection::Down)->pluck('task.title')->unique()->all())->toBe(['Листать ленту'])
+        ->and($marks->where('direction', HabitDirection::Down))->toHaveCount(3)
+        ->and($marks->sum('xp_awarded') + $marks->sum('gold_awarded'))->toBe(0)
+        ->and($marks->max('period_date')->toDateString())->toBe('2026-10-12');
+});
+
+it('starts with the achievements of its history and level 5 as the next goal', function () {
+    // Arrange
+    $demo = seedDemo($this);
+
+    // Act
+    $character = $this->actingAs($demo)->getJson('/api/user')->json('data.character');
+
+    // Assert
+    expect($demo->achievements()->pluck('code')->all())->toEqualCanonicalizing([
+        'first_step', 'streak_3', 'streak_7', 'active_10', 'first_purchase',
+    ])
+        ->and($demo->character->inventoryItems()->whereRelation('item', 'code', 'paladin_pants')->exists())->toBeTrue()
+        ->and($character['next_goal']['code'])->toBe('level_5')
+        ->and($character['next_goal']['current'])->toBe(4);
+});
+
+it('moves the habit marks and the achievements along with the history', function () {
+    // Arrange
+    $demo = seedDemo($this);
+    $this->travelTo(CarbonImmutable::parse('2026-10-20 12:00:00', 'UTC'));
+
+    // Act
+    $this->seed(DemoSeeder::class);
+
+    // Assert
+    expect(HabitMark::query()->max('period_date'))->toStartWith('2026-10-19')
+        ->and($demo->achievements()->max('earned_at'))->toStartWith('2026-10-20 12:00:00');
+});
+
+it('moves the history by the latest habit mark when it is newer than every completion', function () {
+    // Arrange: the reviewer only marked a habit on the 13th
+    $demo = seedDemo($this);
+    $habit = $demo->tasks()->where('title', 'Выпить стакан воды')->sole();
+    $this->actingAs($demo)->postJson("/api/tasks/{$habit->id}/habit-marks", ['direction' => 'up'])->assertCreated();
+    $this->travelTo(CarbonImmutable::parse('2026-10-18 12:00:00', 'UTC'));
+
+    // Act
+    $this->seed(DemoSeeder::class);
+
+    // Assert: the plus lands on yesterday, not in the future, and keeps the streak
+    expect(HabitMark::query()->max('period_date'))->toStartWith('2026-10-17')
+        ->and($this->actingAs($demo)->getJson('/api/user')->json('data.character.streak'))->toBe(['days' => 13, 'active_today' => false]);
 });
 
 it('levels up after two completions and can buy a new item', function () {
@@ -237,6 +300,6 @@ it('seeds the catalog and the demo from the default seeder', function () {
     $this->seed();
 
     // Assert
-    expect(Item::query()->count())->toBe(32)
+    expect(Item::query()->count())->toBe(37)
         ->and(User::query()->where('email', DemoSeeder::EMAIL)->exists())->toBeTrue();
 });

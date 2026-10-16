@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 
 import ItemCard from '../ItemCard.vue'
-import { woodenSwordFixture } from '@/api/__tests__/fixtures'
+import { paladinPantsFixture, woodenSwordFixture } from '@/api/__tests__/fixtures'
 
 function mountCard(equipped = false, disabled = false) {
   return mount(ItemCard, { props: { item: woodenSwordFixture, equipped, disabled } })
@@ -16,6 +16,17 @@ describe('ItemCard', () => {
 
     expect(wrapper.emitted('equip')).toHaveLength(1)
     expect(wrapper.get('[role="img"]').attributes('aria-label')).toBe('Деревянный меч')
+  })
+
+  it('marks a rare item and only a rare one', () => {
+    const plain = mountCard()
+    const rare = mount(ItemCard, {
+      props: { item: paladinPantsFixture, equipped: false, disabled: false },
+    })
+
+    expect(plain.find('[data-testid="rare-mark"]').exists()).toBe(false)
+    expect(rare.get('[data-testid="rare-mark"]').text()).toBe('Редкий')
+    expect(rare.get('button').classes()).toContain('border-rare/60')
   })
 
   it('names the card once: the icon repeats the visible title, so it is hidden from screen readers', () => {
