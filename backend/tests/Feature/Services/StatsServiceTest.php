@@ -6,6 +6,7 @@ namespace Tests\Feature\Services\Stats;
 
 // The namespace keeps this file's helper functions apart from those of other test files
 
+use App\Models\HabitMark;
 use App\Models\Task;
 use App\Models\TaskCompletion;
 use App\Models\User;
@@ -142,6 +143,56 @@ it('has no share without dailies', function () {
     // Assert
     expect($rate->scheduled)->toBe(0)
         ->and($rate->percent())->toBeNull();
+});
+
+it('counts habit pluses in the map, but not minuses', function () {
+    // Arrange
+    $habit = Task::factory()->for($this->user)->habit()->create();
+    $daily = oldDaily($this->user);
+    completedOn($daily, '2026-10-12');
+    HabitMark::factory()->for($habit)->on('2026-10-12')->count(2)->create();
+    HabitMark::factory()->for($habit)->on('2026-10-11')->down()->create();
+
+    // Act
+    $heatmap = $this->stats->heatmap($this->user);
+
+    // Assert
+    expect(countOn($heatmap, '2026-10-12'))->toBe(3)
+        ->and(countOn($heatmap, '2026-10-11'))->toBe(0);
+});
+
+it('sums the marks of each habit over the last thirty days, today included', function () {
+    // Arrange
+    $water = Task::factory()->for($this->user)->habit()->create(['title' => 'Пить воду']);
+    $feed = Task::factory()->for($this->user)->habit()->create(['title' => 'Листать ленту']);
+    HabitMark::factory()->for($water)->on('2026-10-13')->count(2)->create();
+    HabitMark::factory()->for($water)->on('2026-09-14')->create();
+    HabitMark::factory()->for($water)->on('2026-09-13')->create();
+    HabitMark::factory()->for($feed)->on('2026-10-10')->down()->count(3)->create();
+
+    // Act
+    $habits = $this->stats->habits($this->user);
+
+    // Assert: 13.09 is the 31st day back, outside the window
+    expect($habits)->toBe([
+        ['id' => $water->id, 'title' => 'Пить воду', 'up' => 3, 'down' => 0],
+        ['id' => $feed->id, 'title' => 'Листать ленту', 'up' => 0, 'down' => 3],
+    ]);
+});
+
+it('leaves deleted habits, other tasks and other users out of the habit list', function () {
+    // Arrange
+    $deleted = Task::factory()->for($this->user)->habit()->create();
+    HabitMark::factory()->for($deleted)->on('2026-10-13')->create();
+    $deleted->delete();
+    oldDaily($this->user);
+    Task::factory()->habit()->create();
+
+    // Act
+    $habits = $this->stats->habits($this->user);
+
+    // Assert
+    expect($habits)->toBe([]);
 });
 
 it('rounds the share to the nearest percent', function () {

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
 import TaskItem from '../TaskItem.vue'
-import { dailyTaskFixture } from '@/api/__tests__/fixtures'
+import { dailyTaskFixture, habitTaskFixture } from '@/api/__tests__/fixtures'
 import type { Task, UpdateTaskPayload } from '@/api/types'
 import { answerDialog, confirmDialog as dialog, dialogButton } from '@/__tests__/confirmDialog'
 
@@ -27,6 +27,27 @@ describe('TaskItem', () => {
   afterEach(() => {
     vi.restoreAllMocks()
     document.body.innerHTML = ''
+  })
+
+  it('shows plus and minus instead of a checkbox for a habit and passes them on', async () => {
+    const wrapper = mountItem({ ...habitTaskFixture, habit: { up_today: 2, down_today: 1 } })
+
+    expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="habit-counts"]').text()).toBe('+2 / −1')
+
+    await wrapper.get('[aria-label="Плюс: Пить воду"]').trigger('click')
+    await wrapper.get('[aria-label="Минус: Пить воду"]').trigger('click')
+    await wrapper.get('[aria-label="Отменить последнюю отметку: Пить воду"]').trigger('click')
+
+    expect(wrapper.emitted('mark')).toEqual([['up'], ['down']])
+    expect(wrapper.emitted('undo-mark')).toHaveLength(1)
+  })
+
+  it('offers no undo for a habit before its first mark of the day', () => {
+    const wrapper = mountItem(habitTaskFixture)
+
+    expect(wrapper.get('[data-testid="habit-counts"]').text()).toBe('+0 / −0')
+    expect(wrapper.find('[data-testid="habit-undo"]').exists()).toBe(false)
   })
 
   it('reflects the completion state', () => {

@@ -7,6 +7,7 @@ import { makeTestRouter } from './helpers'
 import {
   axiosError,
   characterFixture,
+  firstStepFixture,
   goldenHelmetFixture,
   greenBandanaFixture,
   headbandFixture,
@@ -95,7 +96,10 @@ describe('ShopView', () => {
   })
 
   it('buys a confirmed item and marks it as bought', async () => {
-    vi.mocked(buyItem).mockResolvedValue({ ...levelTwoHero, gold: 10 })
+    vi.mocked(buyItem).mockResolvedValue({
+      character: { ...levelTwoHero, gold: 10 },
+      achievements: [],
+    })
     const wrapper = await mountView()
 
     await card(wrapper, 'Зелёная бандана').get('button').trigger('click')
@@ -108,9 +112,30 @@ describe('ShopView', () => {
     expect(card(wrapper, 'Зелёная бандана').text()).toContain('Куплено')
   })
 
+  it('announces the achievement a purchase earned', async () => {
+    vi.mocked(buyItem).mockResolvedValue({
+      character: { ...levelTwoHero, gold: 10 },
+      achievements: [
+        { ...firstStepFixture, code: 'first_purchase', title: 'Первая покупка', description: '' },
+      ],
+    })
+    const wrapper = await mountView()
+    expect(wrapper.get('[data-testid="shop-earned"]').text()).toBe('')
+
+    await card(wrapper, 'Зелёная бандана').get('button').trigger('click')
+    await answerDialog(wrapper, 'Купить')
+
+    const earned = wrapper.get('[data-testid="shop-earned"]')
+    expect(earned.text()).toContain('Достижение: Первая покупка!')
+    expect(earned.get('a').attributes('href')).toBe('/achievements')
+  })
+
   // The buy button that opened the dialog is gone after the purchase, so the focus would drop to <body>
   it('moves the focus to the card of the bought item', async () => {
-    vi.mocked(buyItem).mockResolvedValue({ ...levelTwoHero, gold: 10 })
+    vi.mocked(buyItem).mockResolvedValue({
+      character: { ...levelTwoHero, gold: 10 },
+      achievements: [],
+    })
     const wrapper = await mountView()
 
     await card(wrapper, 'Зелёная бандана').get('button').trigger('click')
@@ -122,7 +147,10 @@ describe('ShopView', () => {
   it('keeps the gold of a purchase that finished before the shop was marked as seen', async () => {
     let answerSeen: (character: Character) => void = () => {}
     vi.mocked(markShopSeen).mockReturnValue(new Promise((resolve) => (answerSeen = resolve)))
-    vi.mocked(buyItem).mockResolvedValue({ ...levelTwoHero, gold: 10 })
+    vi.mocked(buyItem).mockResolvedValue({
+      character: { ...levelTwoHero, gold: 10 },
+      achievements: [],
+    })
     const wrapper = await mountView({ ...levelTwoHero, shop: { new_items: [greenBandanaFixture] } })
 
     await card(wrapper, 'Зелёная бандана').get('button').trigger('click')

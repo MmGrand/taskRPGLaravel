@@ -25,16 +25,38 @@ it('seeds the catalog with one starter item per slot', function () {
     $this->seed(ItemCatalogSeeder::class);
 
     // Assert
-    expect(Item::query()->count())->toBe(32)
+    expect(Item::query()->count())->toBe(37)
         ->and(Item::query()->get()->countBy(fn (Item $item) => $item->slot->value)->all())->toBe([
-            'head' => 7,
-            'body' => 8,
-            'legs' => 5,
-            'weapon' => 7,
-            'shield' => 5,
+            'head' => 8,
+            'body' => 9,
+            'legs' => 6,
+            'weapon' => 8,
+            'shield' => 6,
         ])
         ->and(Item::query()->where('is_starter', true)->get()->map(fn (Item $item) => $item->slot)->all())
         ->toEqualCanonicalizing(ItemSlot::cases());
+});
+
+it('seeds one rare item per slot, free and never a starter', function () {
+    // Act
+    $this->seed(ItemCatalogSeeder::class);
+
+    // Assert
+    $rare = Item::query()->where('is_rare', true)->get();
+    expect($rare->map(fn (Item $item) => $item->slot)->all())->toEqualCanonicalizing(ItemSlot::cases())
+        ->and($rare->pluck('code')->all())->toEqualCanonicalizing([
+            'valkyrie_helmet', 'amethyst_armor', 'paladin_pants', 'frost_axe', 'hero_shield',
+        ])
+        ->and($rare->every(fn (Item $item) => ! $item->is_starter && $item->price === 0))->toBeTrue();
+});
+
+it('gives every item a tile of its own', function () {
+    // Act
+    $this->seed(ItemCatalogSeeder::class);
+
+    // Assert
+    $tiles = Item::query()->get()->map(fn (Item $item) => "{$item->sprite_col}:{$item->sprite_row}");
+    expect($tiles->duplicates()->all())->toBe([]);
 });
 
 it('keeps every sprite inside the sheet', function () {
@@ -57,7 +79,7 @@ it('can run again without duplicates and restores changed items', function () {
     $this->seed(ItemCatalogSeeder::class);
 
     // Assert
-    expect(Item::query()->count())->toBe(32)
+    expect(Item::query()->count())->toBe(37)
         ->and(Item::query()->where('code', 'steel_sword')->value('name'))->toBe('Стальной меч');
 });
 

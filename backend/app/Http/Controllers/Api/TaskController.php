@@ -36,9 +36,11 @@ final class TaskController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
+        $today = $this->calendar->today($user);
         $tasks = $user->tasks()
-            ->activeOn($this->calendar->today($user))
+            ->activeOn($today)
             ->with('latestCompletion')
+            ->withHabitCounts($today)
             ->orderBy('position')
             ->orderBy('id')
             ->get();

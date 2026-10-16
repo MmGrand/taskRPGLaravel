@@ -7,6 +7,7 @@ import CharacterSprite from '@/components/CharacterSprite.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import ShopItemCard from '@/components/ShopItemCard.vue'
 import { useFormSubmit } from '@/composables/useFormSubmit'
+import { formatEarned } from '@/game/achievements'
 import { ITEM_SLOTS, SLOT_LABELS, wornItems } from '@/game/equipment'
 import { useAuthStore } from '@/stores/auth'
 
@@ -20,6 +21,8 @@ const catalog = ref<ShopItem[]>([])
 const loaded = ref(false)
 const loadError = ref<string | null>(null)
 const pendingPurchase = ref<ShopItem | null>(null)
+// The first purchase and the whole shop are achievements
+const earnedText = ref('')
 const goods = useTemplateRef<HTMLElement>('goods')
 const { errors, generalError, submitting, submit } = useFormSubmit()
 
@@ -71,8 +74,11 @@ async function confirmPurchase(): Promise<void> {
     return
   }
 
+  earnedText.value = ''
   await submit(async () => {
-    auth.setCharacter(await buyItem(entry.item.id))
+    const { character: updated, achievements } = await buyItem(entry.item.id)
+    auth.setCharacter(updated)
+    earnedText.value = formatEarned(achievements)
     catalog.value = catalog.value.map((other) =>
       other.item.id === entry.item.id ? { ...other, owned: true } : other,
     )
@@ -127,6 +133,13 @@ onMounted(() => Promise.all([loadShop(), markSeen()]))
             </div>
           </div>
           <p v-if="actionError" class="text-sm text-danger" role="alert">{{ actionError }}</p>
+          <!-- Always rendered: screen readers announce changes of a live region, not its arrival -->
+          <p role="status" class="text-sm text-accent" data-testid="shop-earned">
+            {{ earnedText }}
+            <RouterLink v-if="earnedText" :to="{ name: 'achievements' }" class="underline">
+              К достижениям
+            </RouterLink>
+          </p>
         </template>
       </section>
     </div>

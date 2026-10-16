@@ -20,7 +20,14 @@ const emit = defineEmits<{
   <button
     type="button"
     class="flex flex-col items-center gap-1 rounded-lg border bg-ink p-2 text-center transition disabled:cursor-not-allowed"
-    :class="equipped ? 'border-accent' : 'border-white/10 hover:border-accent disabled:opacity-60'"
+    :class="
+      equipped
+        ? 'border-accent'
+        : [
+            item.is_rare ? 'border-rare/60' : 'border-white/10',
+            'hover:border-accent disabled:opacity-60',
+          ]
+    "
     :aria-pressed="equipped"
     :disabled="disabled || equipped"
     @click="emit('equip')"
@@ -36,6 +43,8 @@ const emit = defineEmits<{
       />
     </span>
     <span class="text-sm">{{ item.name }}</span>
+    <!-- Given for an achievement, never sold -->
+    <span v-if="item.is_rare" class="text-xs text-rare" data-testid="rare-mark">Редкий</span>
     <span v-if="equipped" class="text-xs text-accent">Надето</span>
   </button>
 </template>

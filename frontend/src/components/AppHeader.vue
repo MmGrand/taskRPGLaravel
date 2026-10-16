@@ -14,6 +14,7 @@ const router = useRouter()
 
 const LINKS = [
   { name: 'equipment', label: 'Снаряжение' },
+  { name: 'achievements', label: 'Достижения' },
   { name: 'stats', label: 'Статистика' },
   { name: 'profile', label: 'Профиль' },
 ] as const

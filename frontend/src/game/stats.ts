@@ -8,12 +8,12 @@ const SHADE_LIMITS = [0, 1, 3, 5] as const
 export type Shade = 0 | 1 | 2 | 3 | 4
 
 const TASK_FORMS: Record<Intl.LDMLPluralRule, string> = {
-  zero: 'задач',
-  one: 'задача',
-  two: 'задачи',
-  few: 'задачи',
-  many: 'задач',
-  other: 'задачи',
+  zero: 'отметок',
+  one: 'отметка',
+  two: 'отметки',
+  few: 'отметки',
+  many: 'отметок',
+  other: 'отметки',
 }
 
 const russianPlural = new Intl.PluralRules('ru')
@@ -44,7 +44,7 @@ export function formatTasks(count: number): string {
   return `${count} ${TASK_FORMS[russianPlural.select(count)]}`
 }
 
-// '15 окт: 3 задачи'
+// '15 окт: 3 отметки'
 export function formatDayLabel(day: HeatmapDay): string {
   const date = dayFormat.format(new Date(`${day.date}T00:00:00Z`)).replace('.', '')
 

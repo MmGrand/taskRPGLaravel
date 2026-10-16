@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Exceptions\CompletionRefused;
+use App\Exceptions\HabitMarkRefused;
 use App\Exceptions\TimezoneChangeRefused;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -29,6 +30,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->map(
             CompletionRefused::class,
             fn (CompletionRefused $refused) => ValidationException::withMessages(['task' => $refused->getMessage()]),
+        );
+        $exceptions->map(
+            HabitMarkRefused::class,
+            fn (HabitMarkRefused $refused) => ValidationException::withMessages(['task' => $refused->getMessage()]),
         );
         $exceptions->map(
             TimezoneChangeRefused::class,

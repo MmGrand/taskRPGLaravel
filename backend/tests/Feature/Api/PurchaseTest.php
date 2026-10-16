@@ -83,6 +83,15 @@ it('refuses an item above the level of the hero', function () {
     $this->assertDatabaseMissing('inventory_items', ['item_id' => item('golden_helmet')->id]);
 });
 
+it('refuses to sell a rare item', function () {
+    // Act
+    $response = $this->actingAs($this->user)->postJson('/api/shop/purchases', purchase(item('frost_axe')));
+
+    // Assert
+    $response->assertUnprocessable()->assertJsonPath('errors.item_id.0', 'Этот предмет не продаётся: его дают за достижение.');
+    $this->assertDatabaseMissing('inventory_items', ['item_id' => item('frost_axe')->id]);
+});
+
 it('refuses an item the hero cannot afford', function () {
     // Arrange
     Character::query()->whereKey($this->character->id)->update(['gold' => 10]);

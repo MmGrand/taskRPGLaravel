@@ -5,9 +5,12 @@ import {
   TASK_DIFFICULTIES,
   TASK_TYPES,
   type Weekday,
+  type Achievement,
   type Appearance,
   type Character,
   type DailyRate,
+  type HabitCounts,
+  type HabitStat,
   type HeatmapDay,
   type Stats,
   type EquippedItem,
@@ -52,7 +55,8 @@ export function isItem(value: unknown): value is Item {
     isOneOf(ITEM_SLOTS, value.slot) &&
     isTile(value.sprite) &&
     typeof value.required_level === 'number' &&
-    typeof value.price === 'number'
+    typeof value.price === 'number' &&
+    typeof value.is_rare === 'boolean'
   )
 }
 
@@ -105,6 +109,23 @@ export function isShopCatalog(value: unknown): value is ShopItem[] {
   return Array.isArray(value) && value.every(isShopItem)
 }
 
+export function isAchievement(value: unknown): value is Achievement {
+  return (
+    isRecord(value) &&
+    typeof value.code === 'string' &&
+    typeof value.title === 'string' &&
+    typeof value.description === 'string' &&
+    isCount(value.current) &&
+    isCount(value.target) &&
+    (value.earned_at === null || typeof value.earned_at === 'string') &&
+    (value.reward_item === null || isItem(value.reward_item))
+  )
+}
+
+export function isAchievementList(value: unknown): value is Achievement[] {
+  return Array.isArray(value) && value.every(isAchievement)
+}
+
 export function isCharacter(value: unknown): value is Character {
   return (
     isRecord(value) &&
@@ -119,7 +140,8 @@ export function isCharacter(value: unknown): value is Character {
     Array.isArray(value.shop.new_items) &&
     value.shop.new_items.every(isItem) &&
     Array.isArray(value.equipment) &&
-    value.equipment.every(isEquippedItem)
+    value.equipment.every(isEquippedItem) &&
+    (value.next_goal === null || isAchievement(value.next_goal))
   )
 }
 
@@ -155,27 +177,52 @@ export function isTask(value: unknown): value is Task {
     typeof value.is_completed === 'boolean' &&
     typeof value.rewarded_today === 'boolean' &&
     (value.completed_at === null || typeof value.completed_at === 'string') &&
+    (value.habit === null || isHabitCounts(value.habit)) &&
     typeof value.created_at === 'string'
   )
+}
+
+function isHabitCounts(value: unknown): value is HabitCounts {
+  return isRecord(value) && isCount(value.up_today) && isCount(value.down_today)
 }
 
 export function isTaskList(value: unknown): value is Task[] {
   return Array.isArray(value) && value.every(isTask)
 }
 
-export function isCompletionResponse(
-  value: unknown,
-): value is { data: Task; character: Character | null; reward: Reward | null } {
+export function isCompletionResponse(value: unknown): value is {
+  data: Task
+  character: Character | null
+  reward: Reward | null
+  achievements: Achievement[]
+} {
   return (
     isRecord(value) &&
     isTask(value.data) &&
     (value.character === null || isCharacter(value.character)) &&
-    (value.reward === null || isReward(value.reward))
+    (value.reward === null || isReward(value.reward)) &&
+    isAchievementList(value.achievements)
   )
+}
+
+export function isPurchaseResponse(
+  value: unknown,
+): value is { data: Character; achievements: Achievement[] } {
+  return isRecord(value) && isCharacter(value.data) && isAchievementList(value.achievements)
 }
 
 function isCount(value: unknown): value is number {
   return Number.isInteger(value) && (value as number) >= 0
+}
+
+function isHabitStat(value: unknown): value is HabitStat {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'number' &&
+    typeof value.title === 'string' &&
+    isCount(value.up) &&
+    isCount(value.down)
+  )
 }
 
 function isHeatmapDay(value: unknown): value is HeatmapDay {
@@ -197,7 +244,9 @@ export function isStats(value: unknown): value is Stats {
     isRecord(value) &&
     Array.isArray(value.heatmap) &&
     value.heatmap.every(isHeatmapDay) &&
-    isDailyRate(value.dailies)
+    isDailyRate(value.dailies) &&
+    Array.isArray(value.habits) &&
+    value.habits.every(isHabitStat)
   )
 }
 

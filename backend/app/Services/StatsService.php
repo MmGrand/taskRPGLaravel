@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\HabitDirection;
 use App\Enums\TaskType;
 use App\Models\Task;
 use App\Models\User;
 use App\ValueObjects\DailyCompletionRate;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 final class StatsService
@@ -21,8 +23,8 @@ final class StatsService
     public function __construct(private readonly UserCalendar $calendar) {}
 
     /**
-     * Completions per day from the Monday HEATMAP_WEEKS-1 weeks back to today, every day present.
-     * Deleted tasks and completions past the reward limit count too: they were done.
+     * Completions and habit pluses per day from the Monday HEATMAP_WEEKS-1 weeks back to today, every day present.
+     * Deleted tasks and completions past the reward limit count too: they were done. A minus is not.
      *
      * @return list<array{date: string, count: int}>
      */
@@ -30,14 +32,25 @@ final class StatsService
     {
         $today = $this->calendar->today($user);
         $from = $today->startOfWeek(CarbonInterface::MONDAY)->subWeeks(self::HEATMAP_WEEKS - 1);
+        $period = [$from->toDateString(), $today->toDateString()];
 
-        /** @var array<string, int> $counts */
-        $counts = DB::table('task_completions')
+        $completions = DB::table('task_completions')
             ->join('tasks', 'tasks.id', '=', 'task_completions.task_id')
             ->where('tasks.user_id', $user->id)
-            ->whereBetween('task_completions.period_date', [$from->toDateString(), $today->toDateString()])
-            ->groupBy('task_completions.period_date')
-            ->selectRaw('task_completions.period_date as day, count(*) as total')
+            ->whereBetween('task_completions.period_date', $period)
+            ->select('task_completions.period_date as day');
+        $pluses = DB::table('habit_marks')
+            ->join('tasks', 'tasks.id', '=', 'habit_marks.task_id')
+            ->where('tasks.user_id', $user->id)
+            ->where('habit_marks.direction', HabitDirection::Up->value)
+            ->whereBetween('habit_marks.period_date', $period)
+            ->select('habit_marks.period_date as day');
+
+        /** @var array<string, int> $counts */
+        $counts = DB::query()
+            ->fromSub($completions->unionAll($pluses), 'done')
+            ->groupBy('day')
+            ->selectRaw('day, count(*) as total')
             ->pluck('total', 'day')
             ->map(fn (mixed $total): int => (int) $total)
             ->all();
@@ -49,6 +62,38 @@ final class StatsService
         }
 
         return $days;
+    }
+
+    /**
+     * Pluses and minuses of every habit over the RATE_DAYS days up to today, today included, in list order.
+     * Deleted habits are left out: there is nothing to act on. One query for any number of habits.
+     *
+     * @return list<array{id: int, title: string, up: int, down: int}>
+     */
+    public function habits(User $user): array
+    {
+        $today = $this->calendar->today($user);
+        $period = [$today->subDays(self::RATE_DAYS - 1)->toDateString(), $today->toDateString()];
+        $marks = fn (HabitDirection $direction) => fn (Builder $query) => $query
+            ->where('direction', $direction)
+            ->whereBetween('period_date', $period);
+
+        return array_values($user->tasks()
+            ->where('type', TaskType::Habit)
+            ->withCount([
+                'habitMarks as marks_up' => $marks(HabitDirection::Up),
+                'habitMarks as marks_down' => $marks(HabitDirection::Down),
+            ])
+            ->orderBy('position')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (Task $habit): array => [
+                'id' => $habit->id,
+                'title' => $habit->title,
+                'up' => (int) $habit->getAttribute('marks_up'),
+                'down' => (int) $habit->getAttribute('marks_down'),
+            ])
+            ->all());
     }
 
     /**

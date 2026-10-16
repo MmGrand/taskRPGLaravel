@@ -6,14 +6,18 @@ import {
   createTask,
   deleteTask,
   fetchTasks,
+  markHabit as apiMarkHabit,
   saveTaskOrder,
   uncompleteTask,
+  undoHabitMark,
   updateTask,
 } from '@/api/tasks'
 import type {
+  Achievement,
   Character,
   CompletionResult,
   CreateTaskPayload,
+  HabitDirection,
   Reward,
   Task,
   UpdateTaskPayload,
@@ -23,9 +27,13 @@ import { useAuthStore } from '@/stores/auth'
 export interface RewardNotice extends Reward {
   // The new level when this change raised it
   levelUp: number | null
+  // Earned by this change
+  achievements: Achievement[]
   // Grows with every reward, so the same numbers twice still animate twice
   id: number
 }
+
+const NOTHING: Reward = { xp: 0, gold: 0, capped: false }
 
 export const useTasksStore = defineStore('tasks', () => {
   const tasks = ref<Task[]>([])
@@ -35,6 +43,7 @@ export const useTasksStore = defineStore('tasks', () => {
 
   const dailies = computed(() => tasks.value.filter((task) => task.type === 'daily'))
   const todos = computed(() => tasks.value.filter((task) => task.type === 'todo'))
+  const habits = computed(() => tasks.value.filter((task) => task.type === 'habit'))
   // Due today, or already done today after its day left the schedule
   const dailiesToday = computed(() =>
     dailies.value.filter((task) => task.scheduled_today || task.is_completed),
@@ -78,16 +87,16 @@ export const useTasksStore = defineStore('tasks', () => {
   }
 
   async function setCompleted(id: number, completed: boolean): Promise<void> {
-    const levelBefore = currentLevel()
-    const result = await (completed ? completeTask(id) : uncompleteTask(id))
+    await change(() => (completed ? completeTask(id) : uncompleteTask(id)))
+  }
 
-    replace(result.task)
-    apply(result, levelBefore)
+  // A plus answers like a completion; a minus leaves the hero as it was, so it clears the line
+  async function markHabit(id: number, direction: HabitDirection): Promise<void> {
+    await change(() => apiMarkHabit(id, direction))
+  }
 
-    // A completion that changed nothing clears the line, so it never shows an earlier reward as its own
-    if (result.reward === null) {
-      lastReward.value = null
-    }
+  async function undoHabit(id: number): Promise<void> {
+    await change(() => undoHabitMark(id))
   }
 
   // A task completed today gives its reward back on deletion, like an undo. Deleting any other task
@@ -107,6 +116,19 @@ export const useTasksStore = defineStore('tasks', () => {
     lastReward.value = null
   }
 
+  async function change(request: () => Promise<CompletionResult>): Promise<void> {
+    const levelBefore = currentLevel()
+    const result = await request()
+
+    replace(result.task)
+    apply(result, levelBefore)
+
+    // A change that gave nothing clears the line, so it never shows an earlier reward as its own
+    if (result.reward === null && result.achievements.length === 0) {
+      lastReward.value = null
+    }
+  }
+
   function replace(updated: Task): void {
     tasks.value = tasks.value.map((task) => (task.id === updated.id ? updated : task))
   }
@@ -121,13 +143,19 @@ export const useTasksStore = defineStore('tasks', () => {
       useAuthStore().setCharacter(result.character)
     }
 
-    if (result.reward !== null) {
-      lastReward.value = notice(result.reward, levelBefore, result.character)
+    if (result.reward !== null || result.achievements.length > 0) {
+      lastReward.value = notice(
+        result.reward ?? NOTHING,
+        result.achievements,
+        levelBefore,
+        result.character,
+      )
     }
   }
 
   function notice(
     reward: Reward,
+    achievements: Achievement[],
     levelBefore: number | null,
     character: Character | null,
   ): RewardNotice {
@@ -136,7 +164,7 @@ export const useTasksStore = defineStore('tasks', () => {
 
     rewardCount += 1
 
-    return { ...reward, levelUp: raised ? level : null, id: rewardCount }
+    return { ...reward, levelUp: raised ? level : null, achievements, id: rewardCount }
   }
 
   return {
@@ -147,11 +175,14 @@ export const useTasksStore = defineStore('tasks', () => {
     dailiesToday,
     dailiesLater,
     todos,
+    habits,
     load,
     add,
     update,
     reorder,
     setCompleted,
+    markHabit,
+    undoHabit,
     remove,
     reset,
   }

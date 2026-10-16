@@ -23,7 +23,8 @@ final class ShopController extends Controller
         $character = $this->characterOf($request);
         $ownedIds = array_fill_keys($character->inventoryItems()->pluck('item_id')->all(), true);
         $level = $this->progression->progressFor($character->xp)->level;
-        $items = Item::query()->orderBy('required_level')->orderBy('id')->get();
+        // Rare items come with achievements and are never sold
+        $items = Item::query()->where('is_rare', false)->orderBy('required_level')->orderBy('id')->get();
 
         // Each entry needs the owned set and the level, which a resource collection cannot pass on
         return response()->json([

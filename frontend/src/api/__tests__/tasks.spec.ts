@@ -6,11 +6,19 @@ import {
   createTask,
   deleteTask,
   fetchTasks,
+  markHabit,
   saveTaskOrder,
   uncompleteTask,
+  undoHabitMark,
   updateTask,
 } from '../tasks'
-import { characterFixture, dailyTaskFixture, todoTaskFixture } from './fixtures'
+import {
+  characterFixture,
+  dailyTaskFixture,
+  firstStepFixture,
+  habitTaskFixture,
+  todoTaskFixture,
+} from './fixtures'
 
 vi.mock('../http', () => ({
   http: {
@@ -40,15 +48,29 @@ describe('tasks api', () => {
   })
 
   it('fetches the task list', async () => {
-    getMock.mockResolvedValue({ data: { data: [dailyTaskFixture, todoTaskFixture] } })
+    getMock.mockResolvedValue({
+      data: { data: [dailyTaskFixture, todoTaskFixture, habitTaskFixture] },
+    })
 
-    await expect(fetchTasks()).resolves.toEqual([dailyTaskFixture, todoTaskFixture])
+    await expect(fetchTasks()).resolves.toEqual([
+      dailyTaskFixture,
+      todoTaskFixture,
+      habitTaskFixture,
+    ])
     expect(getMock).toHaveBeenCalledWith('/tasks')
   })
 
   it('rejects a list with a task it cannot render', async () => {
     getMock.mockResolvedValue({
-      data: { data: [dailyTaskFixture, { ...todoTaskFixture, type: 'habit' }] },
+      data: { data: [dailyTaskFixture, { ...todoTaskFixture, type: 'weekly' }] },
+    })
+
+    await expect(fetchTasks()).rejects.toThrow('Unexpected task list response')
+  })
+
+  it('rejects a habit without counts it can show', async () => {
+    getMock.mockResolvedValue({
+      data: { data: [{ ...habitTaskFixture, habit: { up_today: -1, down_today: 0 } }] },
     })
 
     await expect(fetchTasks()).rejects.toThrow('Unexpected task list response')
@@ -86,6 +108,7 @@ describe('tasks api', () => {
         data: todoTaskFixture,
         character: characterFixture,
         reward: { xp: -10, gold: -5, capped: false },
+        achievements: [],
       },
     })
 
@@ -93,6 +116,7 @@ describe('tasks api', () => {
       task: todoTaskFixture,
       character: characterFixture,
       reward: { xp: -10, gold: -5, capped: false },
+      achievements: [],
     })
     expect(deleteMock).toHaveBeenCalledWith('/tasks/2')
   })
@@ -103,12 +127,13 @@ describe('tasks api', () => {
     await expect(deleteTask(2)).rejects.toThrow('Unexpected task completion response')
   })
 
-  it('completes and uncompletes a task, bringing the hero and the reward along', async () => {
+  it('completes and uncompletes a task, bringing the hero, the reward and the achievements along', async () => {
     putMock.mockResolvedValue({
       data: {
         data: completedDaily,
         character: characterFixture,
         reward: { xp: 10, gold: 5, capped: false },
+        achievements: [firstStepFixture],
       },
     })
     deleteMock.mockResolvedValue({
@@ -116,6 +141,7 @@ describe('tasks api', () => {
         data: dailyTaskFixture,
         character: characterFixture,
         reward: { xp: -10, gold: -5, capped: false },
+        achievements: [],
       },
     })
 
@@ -123,33 +149,77 @@ describe('tasks api', () => {
       task: completedDaily,
       character: characterFixture,
       reward: { xp: 10, gold: 5, capped: false },
+      achievements: [firstStepFixture],
     })
     await expect(uncompleteTask(1)).resolves.toEqual({
       task: dailyTaskFixture,
       character: characterFixture,
       reward: { xp: -10, gold: -5, capped: false },
+      achievements: [],
     })
     expect(putMock).toHaveBeenCalledWith('/tasks/1/completion')
     expect(deleteMock).toHaveBeenCalledWith('/tasks/1/completion')
   })
 
   it('accepts a completion without a hero or a reward', async () => {
-    putMock.mockResolvedValue({ data: { data: completedDaily, character: null, reward: null } })
+    putMock.mockResolvedValue({
+      data: { data: completedDaily, character: null, reward: null, achievements: [] },
+    })
 
     await expect(completeTask(1)).resolves.toEqual({
       task: completedDaily,
       character: null,
       reward: null,
+      achievements: [],
     })
   })
 
   it('rejects a completion it cannot render', async () => {
     putMock.mockResolvedValue({
-      data: { data: { ...dailyTaskFixture, is_completed: 'yes' }, character: null, reward: null },
+      data: {
+        data: { ...dailyTaskFixture, is_completed: 'yes' },
+        character: null,
+        reward: null,
+        achievements: [],
+      },
     })
     deleteMock.mockResolvedValue({ data: { data: dailyTaskFixture } })
 
     await expect(completeTask(1)).rejects.toThrow('Unexpected task completion response')
     await expect(uncompleteTask(1)).rejects.toThrow('Unexpected task completion response')
+  })
+
+  it('rejects a completion without the list of earned achievements', async () => {
+    putMock.mockResolvedValue({ data: { data: completedDaily, character: null, reward: null } })
+
+    await expect(completeTask(1)).rejects.toThrow('Unexpected task completion response')
+  })
+
+  it('marks a habit plus or minus and takes back the latest mark', async () => {
+    const plussed = { ...habitTaskFixture, habit: { up_today: 1, down_today: 0 } }
+    postMock.mockResolvedValue({
+      data: {
+        data: plussed,
+        character: characterFixture,
+        reward: { xp: 5, gold: 2, capped: false },
+        achievements: [],
+      },
+    })
+    deleteMock.mockResolvedValue({
+      data: {
+        data: habitTaskFixture,
+        character: characterFixture,
+        reward: { xp: -5, gold: -2, capped: false },
+        achievements: [],
+      },
+    })
+
+    await expect(markHabit(3, 'up')).resolves.toMatchObject({ task: plussed, reward: { xp: 5 } })
+    await expect(undoHabitMark(3)).resolves.toMatchObject({
+      task: habitTaskFixture,
+      reward: { xp: -5 },
+    })
+    expect(postMock).toHaveBeenCalledWith('/tasks/3/habit-marks', { direction: 'up' })
+    expect(deleteMock).toHaveBeenCalledWith('/tasks/3/habit-marks/latest')
   })
 })

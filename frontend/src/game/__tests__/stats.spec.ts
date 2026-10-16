@@ -34,20 +34,20 @@ describe('toWeeks', () => {
 describe('formatTasks', () => {
   it('declines the word for the number', () => {
     expect([0, 1, 2, 5, 11, 21, 22].map(formatTasks)).toEqual([
-      '0 задач',
-      '1 задача',
-      '2 задачи',
-      '5 задач',
-      '11 задач',
-      '21 задача',
-      '22 задачи',
+      '0 отметок',
+      '1 отметка',
+      '2 отметки',
+      '5 отметок',
+      '11 отметок',
+      '21 отметка',
+      '22 отметки',
     ])
   })
 })
 
 describe('formatDayLabel', () => {
   it('names the calendar day without moving it', () => {
-    expect(formatDayLabel({ date: '2026-01-01', count: 3 })).toBe('1 янв: 3 задачи')
-    expect(formatDayLabel({ date: '2026-10-15', count: 1 })).toBe('15 окт: 1 задача')
+    expect(formatDayLabel({ date: '2026-01-01', count: 3 })).toBe('1 янв: 3 отметки')
+    expect(formatDayLabel({ date: '2026-10-15', count: 1 })).toBe('15 окт: 1 отметка')
   })
 })

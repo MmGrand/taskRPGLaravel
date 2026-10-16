@@ -2,8 +2,9 @@
 import { computed, ref } from 'vue'
 
 import type { ValidationErrors } from '@/api/errors'
-import type { Task, UpdateTaskPayload } from '@/api/types'
+import type { HabitDirection, Task, UpdateTaskPayload } from '@/api/types'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import HabitControls from '@/components/HabitControls.vue'
 import TaskEditDialog from '@/components/TaskEditDialog.vue'
 import { difficultyLabel, formatWeekdays } from '@/game/tasks'
 
@@ -26,6 +27,8 @@ const emit = defineEmits<{
   toggle: [completed: boolean]
   remove: []
   move: [step: -1 | 1]
+  mark: [direction: HabitDirection]
+  'undo-mark': []
 }>()
 
 const editing = ref(false)
@@ -97,29 +100,46 @@ function confirmRemoval(): void {
       </svg>
     </button>
 
-    <!-- Controlled: the box changes only when the store receives the server answer -->
-    <input
-      v-if="!offToday"
-      type="checkbox"
-      class="size-5 shrink-0 cursor-pointer accent-accent disabled:cursor-not-allowed"
-      :checked="task.is_completed"
-      :disabled="disabled"
-      :aria-label="`Выполнено: ${task.title}`"
-      @click.prevent="emit('toggle', !task.is_completed)"
-    />
-    <span v-else class="size-5 shrink-0" aria-hidden="true" />
+    <!-- Controlled: the box changes only when the store receives the server answer.
+         A habit is never done, it is marked plus or minus instead -->
+    <template v-if="!task.habit">
+      <input
+        v-if="!offToday"
+        type="checkbox"
+        class="size-5 shrink-0 cursor-pointer accent-accent disabled:cursor-not-allowed"
+        :checked="task.is_completed"
+        :disabled="disabled"
+        :aria-label="`Выполнено: ${task.title}`"
+        @click.prevent="emit('toggle', !task.is_completed)"
+      />
+      <span v-else class="size-5 shrink-0" aria-hidden="true" />
+    </template>
 
-    <div class="flex min-w-0 flex-1 flex-col">
-      <span
-        data-testid="task-title"
-        class="break-words"
-        :class="task.is_completed ? 'text-slate-400 line-through' : ''"
-      >
-        {{ task.title }}
-      </span>
-      <span v-if="details" data-testid="task-details" class="text-xs text-slate-400">
-        {{ details }}
-      </span>
+    <!-- On a phone the habit buttons go under the title, so the row fits -->
+    <div
+      class="flex min-w-0 flex-1 flex-col"
+      :class="{ 'gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3': task.habit }"
+    >
+      <div class="flex min-w-0 flex-col">
+        <span
+          data-testid="task-title"
+          class="break-words"
+          :class="task.is_completed ? 'text-slate-400 line-through' : ''"
+        >
+          {{ task.title }}
+        </span>
+        <span v-if="details" data-testid="task-details" class="text-xs text-slate-400">
+          {{ details }}
+        </span>
+      </div>
+      <HabitControls
+        v-if="task.habit"
+        :title="task.title"
+        :counts="task.habit"
+        :disabled="disabled"
+        @mark="(direction) => emit('mark', direction)"
+        @undo="emit('undo-mark')"
+      />
     </div>
 
     <!-- Pencil and trash outlines from Lucide (ISC); the button label names the action -->

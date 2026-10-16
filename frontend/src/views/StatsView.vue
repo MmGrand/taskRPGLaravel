@@ -53,8 +53,31 @@ onMounted(loadStats)
       </section>
 
       <section class="card flex flex-col gap-3" aria-labelledby="heatmap-title">
-        <h2 id="heatmap-title" class="text-lg font-semibold">Выполнения за 12 недель</h2>
+        <h2 id="heatmap-title" class="text-lg font-semibold">
+          Выполнения и плюсы привычек за 12 недель
+        </h2>
         <CompletionHeatmap :days="stats.heatmap" />
+      </section>
+
+      <section class="card flex flex-col gap-3" aria-labelledby="habits-title">
+        <h2 id="habits-title" class="text-lg font-semibold">
+          Привычки за {{ formatDays(stats.dailies.days) }}
+        </h2>
+        <ul v-if="stats.habits.length > 0" class="divide-y divide-white/10">
+          <li
+            v-for="habit in stats.habits"
+            :key="habit.id"
+            class="flex items-center justify-between gap-3 py-2"
+            data-testid="habit-stat"
+          >
+            <span class="min-w-0 break-words">{{ habit.title }}</span>
+            <span class="shrink-0 text-sm text-slate-300 tabular-nums">
+              <span aria-hidden="true">+{{ habit.up }} / −{{ habit.down }}</span>
+              <span class="sr-only">плюсов {{ habit.up }}, минусов {{ habit.down }}</span>
+            </span>
+          </li>
+        </ul>
+        <p v-else class="text-slate-400" data-testid="habits-empty">Привычек пока нет.</p>
       </section>
     </template>
   </div>

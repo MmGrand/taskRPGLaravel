@@ -102,12 +102,29 @@ describe('TaskCreateForm', () => {
     })
   })
 
-  it('hides the days for a todo', async () => {
+  it('hides the days for a todo and a habit', async () => {
     const wrapper = mountForm()
 
     await typeOption(wrapper, 'Разовая').setValue()
-
     expect(wrapper.find('input[aria-label="Понедельник"]').exists()).toBe(false)
+
+    await typeOption(wrapper, 'Привычка').setValue()
+    expect(wrapper.find('input[aria-label="Понедельник"]').exists()).toBe(false)
+  })
+
+  it('creates a habit without days', async () => {
+    vi.mocked(createTask).mockResolvedValue(todoTaskFixture)
+    const wrapper = mountForm()
+
+    await wrapper.get('input[name="title"]').setValue('Пить воду')
+    await typeOption(wrapper, 'Привычка').setValue()
+    await wrapper.get('form').trigger('submit')
+
+    expect(createTask).toHaveBeenCalledWith({
+      title: 'Пить воду',
+      type: 'habit',
+      difficulty: 'medium',
+    })
   })
 
   it('shows the title validation error and keeps the input', async () => {

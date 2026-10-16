@@ -6,6 +6,7 @@ namespace Tests\Feature\Services\Streak;
 
 // The namespace keeps this file's helper functions apart from those of other test files
 
+use App\Models\HabitMark;
 use App\Models\Task;
 use App\Models\TaskCompletion;
 use App\Models\User;
@@ -139,4 +140,82 @@ it('moves to the next day at midnight in the user timezone', function () {
     expect($streak->days)->toBe(1)
         ->and($streak->activeToday)->toBeFalse()
         ->and($this->streaks->lengthIncludingToday($this->user))->toBe(2);
+});
+
+it('counts a day with only a habit plus as active', function () {
+    // Arrange
+    $habit = Task::factory()->for($this->user)->habit()->create();
+    completedOn($this->daily, '2026-10-11');
+    HabitMark::factory()->for($habit)->on('2026-10-12')->create();
+    HabitMark::factory()->for($habit)->on('2026-10-12')->create();
+
+    // Act
+    $streak = $this->streaks->current($this->user);
+
+    // Assert
+    expect($streak->days)->toBe(2)
+        ->and($this->streaks->activeDayCount($this->user))->toBe(2);
+});
+
+it('does not count a day with only a habit minus', function () {
+    // Arrange
+    $habit = Task::factory()->for($this->user)->habit()->create();
+    completedOn($this->daily, '2026-10-11');
+    HabitMark::factory()->for($habit)->on('2026-10-12')->down()->create();
+
+    // Act
+    $streak = $this->streaks->current($this->user);
+
+    // Assert
+    expect($streak->days)->toBe(0)
+        ->and($this->streaks->activeDayCount($this->user))->toBe(1);
+});
+
+it('finds the longest streak even after it broke', function () {
+    // Arrange: five days, a gap, three days, a gap, then yesterday and today
+    completedOn($this->daily, '2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04', '2026-09-05');
+    completedOn($this->daily, '2026-09-10', '2026-09-11', '2026-09-12');
+    completedOn($this->daily, '2026-10-12', '2026-10-13');
+
+    // Act
+    $longest = $this->streaks->longest($this->user);
+
+    // Assert
+    expect($longest)->toBe(5)
+        ->and($this->streaks->current($this->user)->days)->toBe(2);
+});
+
+it('takes the current run as the longest when it is', function () {
+    // Arrange
+    completedOn($this->daily, '2026-09-01', '2026-10-11', '2026-10-12', '2026-10-13');
+
+    // Act
+    $longest = $this->streaks->longest($this->user);
+
+    // Assert
+    expect($longest)->toBe(3);
+});
+
+it('has no longest streak without activity', function () {
+    // Act
+    $longest = $this->streaks->longest($this->user);
+
+    // Assert
+    expect($longest)->toBe(0)
+        ->and($this->streaks->activeDayCount($this->user))->toBe(0);
+});
+
+it('counts the days of deleted tasks and habits too', function () {
+    // Arrange
+    $habit = Task::factory()->for($this->user)->habit()->create();
+    HabitMark::factory()->for($habit)->on('2026-10-12')->create();
+    completedOn($this->daily, '2026-10-13');
+    $habit->delete();
+    $this->daily->delete();
+
+    // Act
+    $count = $this->streaks->activeDayCount($this->user);
+
+    // Assert
+    expect($count)->toBe(2);
 });

@@ -29,7 +29,8 @@ final class TaskFactory extends Factory
         return [
             'user_id' => User::factory(),
             'title' => Str::limit(fake()->sentence(3), self::MAX_TITLE_LENGTH, ''),
-            'type' => fake()->randomElement(TaskType::cases()),
+            // A habit cannot be completed, so a task of no stated type is one that can
+            'type' => fake()->randomElement([TaskType::Daily, TaskType::Todo]),
             'difficulty' => TaskDifficulty::Medium,
         ];
     }
@@ -53,5 +54,10 @@ final class TaskFactory extends Factory
     public function todo(): static
     {
         return $this->state(fn (array $attributes) => ['type' => TaskType::Todo]);
+    }
+
+    public function habit(): static
+    {
+        return $this->state(fn (array $attributes) => ['type' => TaskType::Habit]);
     }
 }

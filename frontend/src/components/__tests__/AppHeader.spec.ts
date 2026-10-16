@@ -69,6 +69,7 @@ describe('AppHeader', () => {
     expect(link(wrapper, 'Task RPG').attributes('href')).toBe('/')
     expect(link(wrapper, 'Магазин').attributes('href')).toBe('/shop')
     expect(link(wrapper, 'Снаряжение').attributes('href')).toBe('/equipment')
+    expect(link(wrapper, 'Достижения').attributes('href')).toBe('/achievements')
     expect(link(wrapper, 'Статистика').attributes('href')).toBe('/stats')
     expect(link(wrapper, 'Профиль').attributes('href')).toBe('/profile')
   })

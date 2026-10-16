@@ -1,6 +1,6 @@
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 
-import type { Character, InventoryItem, Item, Task, User } from '../types'
+import type { Achievement, Character, InventoryItem, Item, Task, User } from '../types'
 
 export const characterFixture: Character = {
   id: 1,
@@ -11,6 +11,7 @@ export const characterFixture: Character = {
   streak: { days: 0, active_today: false },
   shop: { new_items: [] },
   equipment: [],
+  next_goal: null,
   created_at: '2026-10-12T10:00:00+00:00',
 }
 
@@ -22,6 +23,7 @@ export const headbandFixture: Item = {
   sprite: { col: 28, row: 2 },
   required_level: 1,
   price: 0,
+  is_rare: false,
 }
 
 export const greenBandanaFixture: Item = {
@@ -32,6 +34,7 @@ export const greenBandanaFixture: Item = {
   sprite: { col: 30, row: 5 },
   required_level: 2,
   price: 30,
+  is_rare: false,
 }
 
 export const goldenHelmetFixture: Item = {
@@ -42,6 +45,7 @@ export const goldenHelmetFixture: Item = {
   sprite: { col: 30, row: 1 },
   required_level: 9,
   price: 260,
+  is_rare: false,
 }
 
 export const tealShirtFixture: Item = {
@@ -52,6 +56,7 @@ export const tealShirtFixture: Item = {
   sprite: { col: 10, row: 0 },
   required_level: 1,
   price: 0,
+  is_rare: false,
 }
 
 export const woodenSwordFixture: Item = {
@@ -62,6 +67,18 @@ export const woodenSwordFixture: Item = {
   sprite: { col: 42, row: 6 },
   required_level: 1,
   price: 0,
+  is_rare: false,
+}
+
+export const paladinPantsFixture: Item = {
+  id: 35,
+  code: 'paladin_pants',
+  name: 'Штаны паладина',
+  slot: 'legs',
+  sprite: { col: 3, row: 2 },
+  required_level: 1,
+  price: 0,
+  is_rare: true,
 }
 
 export const inventoryFixture: InventoryItem[] = [
@@ -87,6 +104,7 @@ export const dailyTaskFixture: Task = {
   is_completed: false,
   rewarded_today: false,
   completed_at: null,
+  habit: null,
   created_at: '2026-10-13T10:00:00+00:00',
 }
 
@@ -100,7 +118,42 @@ export const todoTaskFixture: Task = {
   is_completed: false,
   rewarded_today: false,
   completed_at: null,
+  habit: null,
   created_at: '2026-10-13T10:05:00+00:00',
+}
+
+export const habitTaskFixture: Task = {
+  id: 3,
+  title: 'Пить воду',
+  type: 'habit',
+  difficulty: 'easy',
+  weekdays: [1, 2, 3, 4, 5, 6, 7],
+  scheduled_today: true,
+  is_completed: false,
+  rewarded_today: false,
+  completed_at: null,
+  habit: { up_today: 0, down_today: 0 },
+  created_at: '2026-10-13T10:10:00+00:00',
+}
+
+export const firstStepFixture: Achievement = {
+  code: 'first_step',
+  title: 'Первый шаг',
+  description: 'Выполнить первую задачу',
+  current: 1,
+  target: 1,
+  earned_at: '2026-10-13T12:00:00+00:00',
+  reward_item: null,
+}
+
+export const streakWeekFixture: Achievement = {
+  code: 'streak_7',
+  title: 'Неделя без пропусков',
+  description: 'Стрик 7 дней',
+  current: 3,
+  target: 7,
+  earned_at: null,
+  reward_item: paladinPantsFixture,
 }
 
 export function axiosError(status: number, data: unknown = {}): AxiosError {

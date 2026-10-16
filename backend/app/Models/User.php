@@ -44,6 +44,14 @@ final class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<UserAchievement, $this>
+     */
+    public function achievements(): HasMany
+    {
+        return $this->hasMany(UserAchievement::class);
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
