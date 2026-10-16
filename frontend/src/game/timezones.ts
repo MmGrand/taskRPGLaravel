@@ -25,7 +25,9 @@ export function timezoneLabel(timezone: string, at: Date = new Date()): string {
     timeZoneName: 'shortOffset',
   })
     .formatToParts(at)
-    .find((part) => part.type === 'timeZoneName')?.value
+    .find((part) => part.type === 'timeZoneName')
+    // ICU versions disagree on the zero offset: some print "GMT", others "GMT+0"
+    ?.value.replace(/^GMT\+0$/, 'GMT')
 
   return offset === undefined ? timezone : `${timezone} (${offset})`
 }
