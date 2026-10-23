@@ -73,17 +73,20 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      # No demo account: the test registers its own player
-      - run: docker compose up -d --build
-        working-directory: .
-        env:
-          SEED_DEMO: "false"
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      # Before compose: otherwise Docker creates frontend/node_modules as root, as the mount point
+      # of the container's node_modules volume, and the runner can no longer install into it
       - run: npm ci
+      # No demo account: the test registers its own player
+      - run: docker compose up -d --build
+        working-directory: .
+        env:
+          SEED_DEMO: "false"
+      # Downloads while the containers start
       - run: npx playwright install --with-deps chromium
       # The app container installs Composer packages and migrates on its first start
       - name: Wait for the stack
