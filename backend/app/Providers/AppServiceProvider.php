@@ -39,6 +39,10 @@ final class AppServiceProvider extends ServiceProvider
         RateLimiter::for('password-change', fn (Request $request): Limit => Limit::perMinute(Config::integer('auth.throttle.password_change_per_minute'))
             ->by((string) $request->user()?->getAuthIdentifier()));
 
+        // Every sign-up creates an account, so one address cannot fill the users table at the general API rate
+        RateLimiter::for('register', fn (Request $request): Limit => Limit::perMinute(Config::integer('auth.throttle.register_per_minute'))
+            ->by((string) $request->ip()));
+
         // The API is documented for reviewers of a local project: nothing secret, no sign-in needed
         Gate::define('viewApiDocs', fn (?User $user = null): bool => true);
     }

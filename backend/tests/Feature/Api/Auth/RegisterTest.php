@@ -30,6 +30,23 @@ it('registers a user, logs them in and returns 201', function () {
     $this->assertDatabaseHas('users', ['email' => 'hero@example.com', 'timezone' => 'Europe/Moscow']);
 });
 
+it('throttles sign-ups from one address', function () {
+    // Arrange
+    $limit = (int) config('auth.throttle.register_per_minute');
+
+    for ($i = 0; $i < $limit; $i++) {
+        $this->postJson('/api/register', [...$this->payload, 'email' => "hero{$i}@example.com"])->assertCreated();
+        $this->app['auth']->forgetGuards();
+    }
+
+    // Act
+    $response = $this->postJson('/api/register', [...$this->payload, 'email' => 'one-more@example.com']);
+
+    // Assert
+    $response->assertTooManyRequests();
+    $this->assertDatabaseMissing('users', ['email' => 'one-more@example.com']);
+});
+
 it('normalizes the email to lowercase', function () {
     // Act
     $response = $this->postJson('/api/register', [...$this->payload, 'email' => '  Hero@Example.COM ']);

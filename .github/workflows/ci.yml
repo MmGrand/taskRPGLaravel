@@ -36,6 +36,8 @@ jobs:
           extensions: pdo_pgsql, redis
           coverage: pcov
       - run: composer install --no-interaction --prefer-dist
+      # Known vulnerabilities fail the build; abandoned packages (dev-only, from laravel-lang) are only reported
+      - run: composer audit --abandoned=report
       - run: cp .env.example .env && php artisan key:generate
       - run: composer lint
       - run: composer analyse
@@ -59,6 +61,8 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      # What ships in the app bundle. The dev tooling has advisories without a non-breaking fix (vitest 4, braces)
+      - run: npm audit --omit=dev
       - run: npm run check:lint
       - run: npm run check:format
       - run: npm run type-check
