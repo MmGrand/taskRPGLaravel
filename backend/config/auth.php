@@ -130,6 +130,7 @@ return [
         'login_max_attempts' => (int) env('AUTH_LOGIN_MAX_ATTEMPTS', 5),
         'login_decay_seconds' => (int) env('AUTH_LOGIN_DECAY_SECONDS', 60),
         'password_change_per_minute' => (int) env('AUTH_PASSWORD_CHANGE_PER_MINUTE', 5),
+        'register_per_minute' => (int) env('AUTH_REGISTER_PER_MINUTE', 5),
     ],
 
 ];
