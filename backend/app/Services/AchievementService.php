@@ -98,18 +98,26 @@ final class AchievementService
                 continue;
             }
 
-            $inserted = DB::table('user_achievements')->insertOrIgnore([
-                'user_id' => $user->id,
-                'code' => $definition->code,
-                'earned_at' => $now,
-            ]);
+            // Together or not at all: an achievement saved without its item would never give the item later
+            $inserted = DB::transaction(function () use ($user, $character, $definition, $now): bool {
+                $inserted = DB::table('user_achievements')->insertOrIgnore([
+                    'user_id' => $user->id,
+                    'code' => $definition->code,
+                    'earned_at' => $now,
+                ]);
 
-            if ($inserted === 0) {
-                continue;
+                if ($inserted === 0) {
+                    return false;
+                }
+
+                $this->giveItem($character, $definition, $now);
+
+                return true;
+            });
+
+            if ($inserted) {
+                $new[$definition->code] = true;
             }
-
-            $new[$definition->code] = true;
-            $this->giveItem($character, $definition, $now);
         }
 
         if ($new === []) {

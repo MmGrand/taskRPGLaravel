@@ -19,7 +19,10 @@ use App\Services\StarterKit;
 use App\ValueObjects\AchievementProgress;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ItemCatalogSeeder;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 uses(RefreshDatabase::class);
 
@@ -106,6 +109,27 @@ it('awards each achievement once under repeated calls', function () {
     expect($again)->toBe([])
         ->and($this->user->achievements()->count())->toBe(3)
         ->and($this->character->inventoryItems()->whereRelation('item', 'code', 'paladin_pants')->count())->toBe(1);
+});
+
+it('keeps an achievement unearned when giving its rare item fails, so a later call gives both', function () {
+    // Arrange
+    activeDays($this->daily, 7);
+    $failItemInsert = true;
+    DB::listen(function (QueryExecuted $query) use (&$failItemInsert): void {
+        if ($failItemInsert && str_contains($query->sql, 'insert') && str_contains($query->sql, 'inventory_items')) {
+            throw new RuntimeException('inventory is unavailable');
+        }
+    });
+
+    // Act
+    $failed = rescue(fn () => $this->achievements->award($this->user), fn () => null, report: false);
+    $failItemInsert = false;
+    $retried = $this->achievements->award($this->user);
+
+    // Assert: the achievements without an item went through the first time, the failed one waited
+    expect($failed)->toBeNull()
+        ->and(codes($retried))->toBe(['streak_7'])
+        ->and($this->character->inventoryItems()->whereRelation('item', 'code', 'paladin_pants')->exists())->toBeTrue();
 });
 
 it('reports only the newly earned achievements', function () {
