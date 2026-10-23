@@ -32,6 +32,11 @@ final class TaskController extends Controller
         private readonly TaskCompletionService $completions,
     ) {}
 
+    /**
+     * Задачи в сохранённом порядке.
+     *
+     * С отметкой «выполнено сегодня». Выполненные разовые скрываются со следующего дня.
+     */
     public function index(Request $request): AnonymousResourceCollection
     {
         /** @var User $user */
@@ -48,6 +53,11 @@ final class TaskController extends Controller
         return TaskResource::collection($tasks);
     }
 
+    /**
+     * Создать задачу.
+     *
+     * Не больше 100 активных задач.
+     */
     public function store(StoreTaskRequest $request): JsonResponse
     {
         /** @var User $user */
@@ -76,6 +86,11 @@ final class TaskController extends Controller
             ->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Изменить задачу.
+     *
+     * Название, сложность и дни недели (дни есть только у ежедневки).
+     */
     public function update(UpdateTaskRequest $request, Task $task): TaskResource
     {
         $this->ensureOwnedBy($request, $task);
@@ -84,6 +99,11 @@ final class TaskController extends Controller
         return new TaskResource($task->load('latestCompletion'));
     }
 
+    /**
+     * Удалить задачу.
+     *
+     * Сегодняшние отметки снимаются вместе с наградой, как при снятии галочки. Прошлые дни остаются в истории.
+     */
     public function destroy(Request $request, Task $task): TaskResource
     {
         $this->ensureOwnedBy($request, $task);

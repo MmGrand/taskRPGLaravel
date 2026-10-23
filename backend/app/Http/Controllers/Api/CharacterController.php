@@ -26,11 +26,21 @@ final class CharacterController extends Controller
 
     public function __construct(private readonly StarterKit $starterKit) {}
 
+    /**
+     * Персонаж пользователя.
+     *
+     * 404, если персонаж ещё не создан.
+     */
     public function show(Request $request): CharacterResource
     {
         return new CharacterResource($this->characterOf($request)->load('equippedItems.item'));
     }
 
+    /**
+     * Создать персонажа.
+     *
+     * Выдаёт стартовый набор. 409, если персонаж уже есть.
+     */
     public function store(StoreCharacterRequest $request): JsonResponse
     {
         /** @var User $user */
@@ -56,6 +66,11 @@ final class CharacterController extends Controller
             ->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Сменить имя и внешность героя.
+     *
+     * XP, золото и вещи не меняются.
+     */
     // Name and look only: progress, gold and equipment are earned, not edited
     public function update(UpdateCharacterRequest $request): CharacterResource
     {

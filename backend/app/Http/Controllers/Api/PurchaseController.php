@@ -26,6 +26,11 @@ final class PurchaseController extends Controller
         private readonly AchievementService $achievements,
     ) {}
 
+    /**
+     * Купить предмет за золото.
+     *
+     * 422 с причиной в `item_id`: уже куплен, мал уровень, не хватает золота или вещь редкая. В `achievements` — достижения, полученные этой покупкой.
+     */
     public function __invoke(BuyItemRequest $request): JsonResponse
     {
         $character = $this->characterOf($request);

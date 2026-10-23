@@ -1,0 +1,2123 @@
+{
+    "openapi": "3.1.2",
+    "info": {
+        "title": "Task RPG API",
+        "version": "1.0.0",
+        "description": "JSON API \u0442\u0440\u0435\u043a\u0435\u0440\u0430 \u0437\u0430\u0434\u0430\u0447 \u0441 \u043f\u0440\u043e\u043a\u0430\u0447\u043a\u043e\u0439 \u043f\u0435\u0440\u0441\u043e\u043d\u0430\u0436\u0430.\n\n## \u0410\u0443\u0442\u0435\u043d\u0442\u0438\u0444\u0438\u043a\u0430\u0446\u0438\u044f\n\nCookie-\u0441\u0435\u0441\u0441\u0438\u044f Sanctum SPA, \u0442\u043e\u043a\u0435\u043d\u043e\u0432 \u043d\u0435\u0442:\n\n1. `GET /sanctum/csrf-cookie` \u0432\u044b\u0434\u0430\u0451\u0442 cookie `XSRF-TOKEN`.\n2. `POST /api/login` \u0438\u043b\u0438 `POST /api/register` \u0441 \u0437\u0430\u0433\u043e\u043b\u043e\u0432\u043a\u043e\u043c `X-XSRF-TOKEN` \u0438\u0437 \u044d\u0442\u043e\u0439 cookie.\n3. \u0414\u0430\u043b\u044c\u0448\u0435 \u0432\u0441\u0435 \u0437\u0430\u043f\u0440\u043e\u0441\u044b \u0438\u0434\u0443\u0442 \u0441 cookie \u0441\u0435\u0441\u0441\u0438\u0438 \u0438 \u0442\u0435\u043c \u0436\u0435 \u0437\u0430\u0433\u043e\u043b\u043e\u0432\u043a\u043e\u043c.\n\n\u0417\u0430\u043f\u0440\u043e\u0441\u044b \u043f\u0440\u0438\u043d\u0438\u043c\u0430\u044e\u0442\u0441\u044f \u0442\u043e\u043b\u044c\u043a\u043e \u0441 origin SPA (`FRONTEND_URL`, \u043b\u043e\u043a\u0430\u043b\u044c\u043d\u043e `http://localhost:5173`) \u0438 \u0441 credentials.\n\n## \u041e\u0442\u0432\u0435\u0442\u044b\n\n- \u0423\u0441\u043f\u0435\u0448\u043d\u044b\u0435 \u043e\u0442\u0432\u0435\u0442\u044b \u043e\u0431\u0451\u0440\u043d\u0443\u0442\u044b \u0432 `{ \"data\": ... }`.\n- \u041e\u0448\u0438\u0431\u043a\u0438 \u0432\u0430\u043b\u0438\u0434\u0430\u0446\u0438\u0438 \u2014 422 `{ \"message\", \"errors\": { \"\u043f\u043e\u043b\u0435\": [\"\u0442\u0435\u043a\u0441\u0442\"] } }`.\n- \u041b\u0438\u043c\u0438\u0442 \u2014 60 \u0437\u0430\u043f\u0440\u043e\u0441\u043e\u0432 \u0432 \u043c\u0438\u043d\u0443\u0442\u0443 \u043d\u0430 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f \u0438\u043b\u0438, \u0434\u043b\u044f \u0433\u043e\u0441\u0442\u044f, \u043d\u0430 IP."
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000/api"
+        }
+    ],
+    "security": [
+        {
+            "apiKey": []
+        }
+    ],
+    "paths": {
+        "/achievements": {
+            "get": {
+                "operationId": "achievement",
+                "description": "\u041f\u0435\u0440\u0435\u0434 \u043e\u0442\u0432\u0435\u0442\u043e\u043c \u0432\u044b\u0434\u0430\u0451\u0442 \u0443\u0436\u0435 \u0437\u0430\u0441\u043b\u0443\u0436\u0435\u043d\u043d\u044b\u0435 \u0434\u043e\u0441\u0442\u0438\u0436\u0435\u043d\u0438\u044f, \u043f\u043e\u044d\u0442\u043e\u043c\u0443 \u0438\u0441\u0442\u043e\u0440\u0438\u044f \u0434\u043e \u0438\u0445 \u043f\u043e\u044f\u0432\u043b\u0435\u043d\u0438\u044f \u0437\u0430\u0441\u0447\u0438\u0442\u044b\u0432\u0430\u0435\u0442\u0441\u044f \u0441\u0430\u043c\u0430.",
+                "summary": "\u0412\u0441\u0435 \u0434\u043e\u0441\u0442\u0438\u0436\u0435\u043d\u0438\u044f \u0441 \u043f\u0440\u043e\u0433\u0440\u0435\u0441\u0441\u043e\u043c",
+                "tags": [
+                    "Achievement"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/character": {
+            "get": {
+                "operationId": "character.show",
+                "description": "404, \u0435\u0441\u043b\u0438 \u043f\u0435\u0440\u0441\u043e\u043d\u0430\u0436 \u0435\u0449\u0451 \u043d\u0435 \u0441\u043e\u0437\u0434\u0430\u043d.",
+                "summary": "\u041f\u0435\u0440\u0441\u043e\u043d\u0430\u0436 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f",
+                "tags": [
+                    "Character"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`CharacterResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CharacterResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "character.store",
+                "description": "\u0412\u044b\u0434\u0430\u0451\u0442 \u0441\u0442\u0430\u0440\u0442\u043e\u0432\u044b\u0439 \u043d\u0430\u0431\u043e\u0440. 409, \u0435\u0441\u043b\u0438 \u043f\u0435\u0440\u0441\u043e\u043d\u0430\u0436 \u0443\u0436\u0435 \u0435\u0441\u0442\u044c.",
+                "summary": "\u0421\u043e\u0437\u0434\u0430\u0442\u044c \u043f\u0435\u0440\u0441\u043e\u043d\u0430\u0436\u0430",
+                "tags": [
+                    "Character"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreCharacterRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`CharacterResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CharacterResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "examples": [
+                                                "Character already exists."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "character.update",
+                "description": "XP, \u0437\u043e\u043b\u043e\u0442\u043e \u0438 \u0432\u0435\u0449\u0438 \u043d\u0435 \u043c\u0435\u043d\u044f\u044e\u0442\u0441\u044f.",
+                "summary": "\u0421\u043c\u0435\u043d\u0438\u0442\u044c \u0438\u043c\u044f \u0438 \u0432\u043d\u0435\u0448\u043d\u043e\u0441\u0442\u044c \u0433\u0435\u0440\u043e\u044f",
+                "tags": [
+                    "Character"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateCharacterRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`CharacterResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CharacterResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/user": {
+            "get": {
+                "operationId": "currentUser",
+                "summary": "\u0422\u0435\u043a\u0443\u0449\u0438\u0439 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c \u0441 \u0433\u0435\u0440\u043e\u0435\u043c",
+                "tags": [
+                    "CurrentUser"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`UserResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/character/equipment/{slot}": {
+            "put": {
+                "operationId": "equipment.update",
+                "summary": "\u041d\u0430\u0434\u0435\u0442\u044c \u0432\u0435\u0449\u044c \u0438\u0437 \u0438\u043d\u0432\u0435\u043d\u0442\u0430\u0440\u044f",
+                "tags": [
+                    "Equipment"
+                ],
+                "parameters": [
+                    {
+                        "name": "slot",
+                        "in": "path",
+                        "required": true,
+                        "description": "The slot ID",
+                        "schema": {
+                            "$ref": "#/components/schemas/ItemSlot"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EquipItemRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`CharacterResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CharacterResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "equipment.destroy",
+                "summary": "\u0421\u043d\u044f\u0442\u044c \u0432\u0435\u0449\u044c \u0441\u043e \u0441\u043b\u043e\u0442\u0430",
+                "tags": [
+                    "Equipment"
+                ],
+                "parameters": [
+                    {
+                        "name": "slot",
+                        "in": "path",
+                        "required": true,
+                        "description": "The slot ID",
+                        "schema": {
+                            "$ref": "#/components/schemas/ItemSlot"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`CharacterResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CharacterResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/tasks/{task}/habit-marks": {
+            "post": {
+                "operationId": "habitMark.store",
+                "description": "\u041e\u0442\u0432\u0435\u0442 201. \u00ab+\u00bb \u043e\u0442\u0432\u0435\u0447\u0430\u0435\u0442 \u043a\u0430\u043a \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435 \u0437\u0430\u0434\u0430\u0447\u0438 \u0438 \u043d\u0430\u0433\u0440\u0430\u0436\u0434\u0430\u0435\u0442 \u0432 \u043f\u0440\u0435\u0434\u0435\u043b\u0430\u0445 \u043b\u0438\u043c\u0438\u0442\u043e\u0432, \u0443 \u00ab\u2212\u00bb `reward: null`. \u041d\u0435 \u043f\u0440\u0438\u0432\u044b\u0447\u043a\u0430 \u0438\u043b\u0438 \u0431\u043e\u043b\u044c\u0448\u0435 50 \u043e\u0442\u043c\u0435\u0442\u043e\u043a \u0437\u0430 \u0434\u0435\u043d\u044c \u2014 422.",
+                "summary": "\u041e\u0442\u043c\u0435\u0442\u0438\u0442\u044c \u043f\u0440\u0438\u0432\u044b\u0447\u043a\u0443 \u00ab+\u00bb \u0438\u043b\u0438 \u00ab\u2212\u00bb",
+                "tags": [
+                    "HabitMark"
+                ],
+                "parameters": [
+                    {
+                        "name": "task",
+                        "in": "path",
+                        "required": true,
+                        "description": "The task ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreHabitMarkRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`TaskResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/TaskResource"
+                                        },
+                                        "character": {
+                                            "type": [
+                                                "array",
+                                                "null"
+                                            ],
+                                            "items": {}
+                                        },
+                                        "reward": {
+                                            "type": "object",
+                                            "properties": {
+                                                "xp": {
+                                                    "type": "integer"
+                                                },
+                                                "gold": {
+                                                    "type": "integer"
+                                                },
+                                                "capped": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "xp",
+                                                "gold",
+                                                "capped"
+                                            ]
+                                        },
+                                        "achievements": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "character",
+                                        "reward",
+                                        "achievements"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/tasks/{task}/habit-marks/latest": {
+            "delete": {
+                "operationId": "habitMark.destroy",
+                "description": "\u0412\u043c\u0435\u0441\u0442\u0435 \u0441 \u0435\u0451 \u043d\u0430\u0433\u0440\u0430\u0434\u043e\u0439. \u041f\u0440\u043e\u0448\u043b\u044b\u0435 \u0434\u043d\u0438 \u043d\u0435 \u0442\u0440\u043e\u0433\u0430\u044e\u0442\u0441\u044f.",
+                "summary": "\u0421\u043d\u044f\u0442\u044c \u043f\u043e\u0441\u043b\u0435\u0434\u043d\u044e\u044e \u043e\u0442\u043c\u0435\u0442\u043a\u0443 \u043f\u0440\u0438\u0432\u044b\u0447\u043a\u0438 \u0437\u0430 \u0441\u0435\u0433\u043e\u0434\u043d\u044f",
+                "tags": [
+                    "HabitMark"
+                ],
+                "parameters": [
+                    {
+                        "name": "task",
+                        "in": "path",
+                        "required": true,
+                        "description": "The task ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`TaskResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/TaskResource"
+                                        },
+                                        "character": {
+                                            "type": [
+                                                "array",
+                                                "null"
+                                            ],
+                                            "items": {}
+                                        },
+                                        "reward": {
+                                            "type": "object",
+                                            "properties": {
+                                                "xp": {
+                                                    "type": "integer"
+                                                },
+                                                "gold": {
+                                                    "type": "integer"
+                                                },
+                                                "capped": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "xp",
+                                                "gold",
+                                                "capped"
+                                            ]
+                                        },
+                                        "achievements": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "character",
+                                        "reward",
+                                        "achievements"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "operationId": "health",
+                "description": "503, \u0435\u0441\u043b\u0438 \u0447\u0442\u043e-\u0442\u043e \u0438\u0437 \u043d\u0438\u0445 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u043e.",
+                "summary": "\u0421\u043e\u0441\u0442\u043e\u044f\u043d\u0438\u0435 \u0411\u0414 \u0438 Redis",
+                "tags": [
+                    "Health"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/character/inventory": {
+            "get": {
+                "operationId": "inventory",
+                "summary": "\u0412\u0435\u0449\u0438 \u0433\u0435\u0440\u043e\u044f",
+                "tags": [
+                    "Inventory"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `InventoryItemResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/InventoryItemResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "operationId": "auth.login",
+                "description": "\u041f\u043e\u0441\u043b\u0435 5 \u043d\u0435\u0443\u0434\u0430\u0447\u043d\u044b\u0445 \u043f\u043e\u043f\u044b\u0442\u043e\u043a \u0432\u0445\u043e\u0434 \u0431\u043b\u043e\u043a\u0438\u0440\u0443\u0435\u0442\u0441\u044f \u043d\u0430 \u043c\u0438\u043d\u0443\u0442\u0443.",
+                "summary": "\u0412\u043e\u0439\u0442\u0438",
+                "tags": [
+                    "Login"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`UserResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/logout": {
+            "post": {
+                "operationId": "auth.logout",
+                "summary": "\u0412\u044b\u0439\u0442\u0438",
+                "tags": [
+                    "Logout"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/shop/purchases": {
+            "post": {
+                "operationId": "purchase",
+                "description": "422 \u0441 \u043f\u0440\u0438\u0447\u0438\u043d\u043e\u0439 \u0432 `item_id`: \u0443\u0436\u0435 \u043a\u0443\u043f\u043b\u0435\u043d, \u043c\u0430\u043b \u0443\u0440\u043e\u0432\u0435\u043d\u044c, \u043d\u0435 \u0445\u0432\u0430\u0442\u0430\u0435\u0442 \u0437\u043e\u043b\u043e\u0442\u0430 \u0438\u043b\u0438 \u0432\u0435\u0449\u044c \u0440\u0435\u0434\u043a\u0430\u044f. \u0412 `achievements` \u2014 \u0434\u043e\u0441\u0442\u0438\u0436\u0435\u043d\u0438\u044f, \u043f\u043e\u043b\u0443\u0447\u0435\u043d\u043d\u044b\u0435 \u044d\u0442\u043e\u0439 \u043f\u043e\u043a\u0443\u043f\u043a\u043e\u0439.",
+                "summary": "\u041a\u0443\u043f\u0438\u0442\u044c \u043f\u0440\u0435\u0434\u043c\u0435\u0442 \u0437\u0430 \u0437\u043e\u043b\u043e\u0442\u043e",
+                "tags": [
+                    "Purchase"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BuyItemRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`CharacterResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CharacterResource"
+                                        },
+                                        "achievements": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "achievements"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
+        "/register": {
+            "post": {
+                "operationId": "auth.register",
+                "summary": "\u0417\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c\u0441\u044f \u0438 \u0432\u043e\u0439\u0442\u0438",
+                "tags": [
+                    "Register"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegisterRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`UserResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/shop": {
+            "get": {
+                "operationId": "shop",
+                "description": "\u041f\u0440\u043e\u0434\u0430\u0432\u0430\u0435\u043c\u044b\u0435 \u0432\u0435\u0449\u0438 \u0431\u0435\u0437 \u0440\u0435\u0434\u043a\u0438\u0445, \u0441 \u043e\u0442\u043c\u0435\u0442\u043a\u0430\u043c\u0438 `owned` (\u043a\u0443\u043f\u043b\u0435\u043d\u043e) \u0438 `unlocked` (\u0443\u0440\u043e\u0432\u0435\u043d\u044c \u043f\u043e\u0437\u0432\u043e\u043b\u044f\u0435\u0442).",
+                "summary": "\u041a\u0430\u0442\u0430\u043b\u043e\u0433 \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0430",
+                "tags": [
+                    "Shop"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "array",
+                                                "items": {}
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/character/shop-seen": {
+            "put": {
+                "operationId": "shopVisit",
+                "description": "\u0421\u043d\u0438\u043c\u0430\u0435\u0442 \u043c\u0435\u0442\u043a\u0443 \u00ab\u041d\u043e\u0432\u043e\u0435\u00bb \u0441 \u0432\u0435\u0449\u0435\u0439, \u043e\u0442\u043a\u0440\u044b\u0432\u0448\u0438\u0445\u0441\u044f \u0441 \u043f\u0440\u043e\u0448\u043b\u043e\u0433\u043e \u0432\u0438\u0437\u0438\u0442\u0430.",
+                "summary": "\u041e\u0442\u043c\u0435\u0442\u0438\u0442\u044c, \u0447\u0442\u043e \u043c\u0430\u0433\u0430\u0437\u0438\u043d \u043e\u0442\u043a\u0440\u044b\u0442",
+                "tags": [
+                    "ShopVisit"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`CharacterResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CharacterResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/stats": {
+            "get": {
+                "operationId": "stats",
+                "description": "`heatmap` \u2014 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u044f \u0438 \u043f\u043b\u044e\u0441\u044b \u043f\u0440\u0438\u0432\u044b\u0447\u0435\u043a \u043f\u043e \u0434\u043d\u044f\u043c \u0437\u0430 12 \u043d\u0435\u0434\u0435\u043b\u044c, `dailies` \u2014 \u0434\u043e\u043b\u044f \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u043d\u044b\u0445 \u0435\u0436\u0435\u0434\u043d\u0435\u0432\u043e\u043a \u043f\u043e \u0440\u0430\u0441\u043f\u0438\u0441\u0430\u043d\u0438\u044e \u0437\u0430 30 \u0437\u0430\u043a\u043e\u043d\u0447\u0435\u043d\u043d\u044b\u0445 \u0434\u043d\u0435\u0439, `habits` \u2014 \u043f\u043b\u044e\u0441\u044b \u0438 \u043c\u0438\u043d\u0443\u0441\u044b \u043a\u0430\u0436\u0434\u043e\u0439 \u043f\u0440\u0438\u0432\u044b\u0447\u043a\u0438 \u0437\u0430 30 \u0434\u043d\u0435\u0439.",
+                "summary": "\u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043a\u0430",
+                "tags": [
+                    "Stats"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "heatmap": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "date": {
+                                                                "type": "string"
+                                                            },
+                                                            "count": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "date",
+                                                            "count"
+                                                        ]
+                                                    }
+                                                },
+                                                "dailies": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "days": {
+                                                            "type": "integer",
+                                                            "const": 30
+                                                        },
+                                                        "scheduled": {
+                                                            "type": "integer",
+                                                            "const": 0
+                                                        },
+                                                        "completed": {
+                                                            "type": "integer",
+                                                            "const": 0
+                                                        },
+                                                        "percent": {
+                                                            "type": [
+                                                                "integer",
+                                                                "null"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "days",
+                                                        "scheduled",
+                                                        "completed",
+                                                        "percent"
+                                                    ]
+                                                },
+                                                "habits": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "heatmap",
+                                                "dailies",
+                                                "habits"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/tasks": {
+            "get": {
+                "operationId": "task.index",
+                "description": "\u0421 \u043e\u0442\u043c\u0435\u0442\u043a\u043e\u0439 \u00ab\u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u043e \u0441\u0435\u0433\u043e\u0434\u043d\u044f\u00bb. \u0412\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u043d\u044b\u0435 \u0440\u0430\u0437\u043e\u0432\u044b\u0435 \u0441\u043a\u0440\u044b\u0432\u0430\u044e\u0442\u0441\u044f \u0441\u043e \u0441\u043b\u0435\u0434\u0443\u044e\u0449\u0435\u0433\u043e \u0434\u043d\u044f.",
+                "summary": "\u0417\u0430\u0434\u0430\u0447\u0438 \u0432 \u0441\u043e\u0445\u0440\u0430\u043d\u0451\u043d\u043d\u043e\u043c \u043f\u043e\u0440\u044f\u0434\u043a\u0435",
+                "tags": [
+                    "Task"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `TaskResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/TaskResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "task.store",
+                "description": "\u041d\u0435 \u0431\u043e\u043b\u044c\u0448\u0435 100 \u0430\u043a\u0442\u0438\u0432\u043d\u044b\u0445 \u0437\u0430\u0434\u0430\u0447.",
+                "summary": "\u0421\u043e\u0437\u0434\u0430\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443",
+                "tags": [
+                    "Task"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreTaskRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`TaskResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/TaskResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/tasks/{task}": {
+            "patch": {
+                "operationId": "task.update",
+                "description": "\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435, \u0441\u043b\u043e\u0436\u043d\u043e\u0441\u0442\u044c \u0438 \u0434\u043d\u0438 \u043d\u0435\u0434\u0435\u043b\u0438 (\u0434\u043d\u0438 \u0435\u0441\u0442\u044c \u0442\u043e\u043b\u044c\u043a\u043e \u0443 \u0435\u0436\u0435\u0434\u043d\u0435\u0432\u043a\u0438).",
+                "summary": "\u0418\u0437\u043c\u0435\u043d\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443",
+                "tags": [
+                    "Task"
+                ],
+                "parameters": [
+                    {
+                        "name": "task",
+                        "in": "path",
+                        "required": true,
+                        "description": "The task ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateTaskRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`TaskResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/TaskResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "task.destroy",
+                "description": "\u0421\u0435\u0433\u043e\u0434\u043d\u044f\u0448\u043d\u0438\u0435 \u043e\u0442\u043c\u0435\u0442\u043a\u0438 \u0441\u043d\u0438\u043c\u0430\u044e\u0442\u0441\u044f \u0432\u043c\u0435\u0441\u0442\u0435 \u0441 \u043d\u0430\u0433\u0440\u0430\u0434\u043e\u0439, \u043a\u0430\u043a \u043f\u0440\u0438 \u0441\u043d\u044f\u0442\u0438\u0438 \u0433\u0430\u043b\u043e\u0447\u043a\u0438. \u041f\u0440\u043e\u0448\u043b\u044b\u0435 \u0434\u043d\u0438 \u043e\u0441\u0442\u0430\u044e\u0442\u0441\u044f \u0432 \u0438\u0441\u0442\u043e\u0440\u0438\u0438.",
+                "summary": "\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443",
+                "tags": [
+                    "Task"
+                ],
+                "parameters": [
+                    {
+                        "name": "task",
+                        "in": "path",
+                        "required": true,
+                        "description": "The task ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`TaskResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/TaskResource"
+                                        },
+                                        "character": {
+                                            "type": [
+                                                "array",
+                                                "null"
+                                            ],
+                                            "items": {}
+                                        },
+                                        "reward": {
+                                            "type": "object",
+                                            "properties": {
+                                                "xp": {
+                                                    "type": "integer"
+                                                },
+                                                "gold": {
+                                                    "type": "integer"
+                                                },
+                                                "capped": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "xp",
+                                                "gold",
+                                                "capped"
+                                            ]
+                                        },
+                                        "achievements": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "character",
+                                        "reward",
+                                        "achievements"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/tasks/{task}/completion": {
+            "put": {
+                "operationId": "taskCompletion.store",
+                "description": "\u041d\u0430\u0447\u0438\u0441\u043b\u044f\u0435\u0442 XP \u0438 \u0437\u043e\u043b\u043e\u0442\u043e, \u043f\u043e\u0432\u0442\u043e\u0440 \u043d\u0438\u0447\u0435\u0433\u043e \u043d\u0435 \u043c\u0435\u043d\u044f\u0435\u0442. \u0415\u0436\u0435\u0434\u043d\u0435\u0432\u043a\u0430 \u043d\u0435 \u043f\u043e \u0440\u0430\u0441\u043f\u0438\u0441\u0430\u043d\u0438\u044e \u0438\u043b\u0438 \u043f\u0440\u0438\u0432\u044b\u0447\u043a\u0430 \u2014 422. `reward.capped: true` \u2014 \u0434\u043d\u0435\u0432\u043d\u043e\u0439 \u043b\u0438\u043c\u0438\u0442 \u043d\u0430\u0433\u0440\u0430\u0434 \u0438\u0441\u0447\u0435\u0440\u043f\u0430\u043d, \u043e\u0442\u043c\u0435\u0442\u043a\u0430 \u0437\u0430\u0441\u0447\u0438\u0442\u0430\u043d\u0430 \u0431\u0435\u0437 \u043d\u0430\u0433\u0440\u0430\u0434\u044b.",
+                "summary": "\u041e\u0442\u043c\u0435\u0442\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u043d\u043e\u0439",
+                "tags": [
+                    "TaskCompletion"
+                ],
+                "parameters": [
+                    {
+                        "name": "task",
+                        "in": "path",
+                        "required": true,
+                        "description": "The task ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`TaskResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/TaskResource"
+                                        },
+                                        "character": {
+                                            "type": [
+                                                "array",
+                                                "null"
+                                            ],
+                                            "items": {}
+                                        },
+                                        "reward": {
+                                            "type": "object",
+                                            "properties": {
+                                                "xp": {
+                                                    "type": "integer"
+                                                },
+                                                "gold": {
+                                                    "type": "integer"
+                                                },
+                                                "capped": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "xp",
+                                                "gold",
+                                                "capped"
+                                            ]
+                                        },
+                                        "achievements": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "character",
+                                        "reward",
+                                        "achievements"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "taskCompletion.destroy",
+                "description": "\u0417\u0430\u0431\u0438\u0440\u0430\u0435\u0442 \u0440\u043e\u0432\u043d\u043e \u0442\u0443 \u043d\u0430\u0433\u0440\u0430\u0434\u0443, \u043a\u043e\u0442\u043e\u0440\u0443\u044e \u0434\u0430\u043b\u0430 \u043e\u0442\u043c\u0435\u0442\u043a\u0430 (`reward` \u0441 \u043c\u0438\u043d\u0443\u0441\u043e\u043c).",
+                "summary": "\u0421\u043d\u044f\u0442\u044c \u043e\u0442\u043c\u0435\u0442\u043a\u0443 \u0437\u0430 \u0441\u0435\u0433\u043e\u0434\u043d\u044f",
+                "tags": [
+                    "TaskCompletion"
+                ],
+                "parameters": [
+                    {
+                        "name": "task",
+                        "in": "path",
+                        "required": true,
+                        "description": "The task ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`TaskResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/TaskResource"
+                                        },
+                                        "character": {
+                                            "type": [
+                                                "array",
+                                                "null"
+                                            ],
+                                            "items": {}
+                                        },
+                                        "reward": {
+                                            "type": "object",
+                                            "properties": {
+                                                "xp": {
+                                                    "type": "integer"
+                                                },
+                                                "gold": {
+                                                    "type": "integer"
+                                                },
+                                                "capped": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "xp",
+                                                "gold",
+                                                "capped"
+                                            ]
+                                        },
+                                        "achievements": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "character",
+                                        "reward",
+                                        "achievements"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/tasks/order": {
+            "put": {
+                "operationId": "taskOrder",
+                "description": "`ids` \u0432 \u043d\u043e\u0432\u043e\u043c \u043f\u043e\u0440\u044f\u0434\u043a\u0435, \u043e\u0442\u0432\u0435\u0442 204. \u0427\u0443\u0436\u043e\u0439 \u0438\u043b\u0438 \u0443\u0434\u0430\u043b\u0451\u043d\u043d\u044b\u0439 id \u2014 422.",
+                "summary": "\u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u043f\u043e\u0440\u044f\u0434\u043e\u043a \u0437\u0430\u0434\u0430\u0447",
+                "tags": [
+                    "TaskOrder"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReorderTasksRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/user/password": {
+            "put": {
+                "operationId": "userPassword",
+                "description": "\u041e\u0442\u0432\u0435\u0442 204. \u0414\u0440\u0443\u0433\u0438\u0435 \u0441\u0435\u0441\u0441\u0438\u0438 \u0432\u044b\u0445\u043e\u0434\u044f\u0442 \u0438\u0437 \u0430\u043a\u043a\u0430\u0443\u043d\u0442\u0430. \u041d\u0435 \u0431\u043e\u043b\u044c\u0448\u0435 5 \u043f\u043e\u043f\u044b\u0442\u043e\u043a \u0432 \u043c\u0438\u043d\u0443\u0442\u0443.",
+                "summary": "\u0421\u043c\u0435\u043d\u0438\u0442\u044c \u043f\u0430\u0440\u043e\u043b\u044c",
+                "tags": [
+                    "UserPassword"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdatePasswordRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/user/timezone": {
+            "put": {
+                "operationId": "userTimezone",
+                "description": "\u0422\u043e\u0442 \u0436\u0435 \u043f\u043e\u044f\u0441 \u043d\u0438\u0447\u0435\u0433\u043e \u043d\u0435 \u043c\u0435\u043d\u044f\u0435\u0442. \u041f\u043e\u0432\u0442\u043e\u0440\u043d\u0430\u044f \u0441\u043c\u0435\u043d\u0430 \u0440\u0430\u043d\u044c\u0448\u0435 \u0447\u0435\u043c \u0447\u0435\u0440\u0435\u0437 24 \u0447\u0430\u0441\u0430 \u2014 422 \u0441 \u043e\u0441\u0442\u0430\u0432\u0448\u0438\u043c\u0441\u044f \u0432\u0440\u0435\u043c\u0435\u043d\u0435\u043c.",
+                "summary": "\u0421\u043c\u0435\u043d\u0438\u0442\u044c \u0447\u0430\u0441\u043e\u0432\u043e\u0439 \u043f\u043e\u044f\u0441",
+                "tags": [
+                    "UserTimezone"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateTimezoneRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`UserResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "apiKey": {
+                "type": "apiKey",
+                "in": "cookie",
+                "name": "task-rpg-session"
+            }
+        },
+        "schemas": {
+            "Beard": {
+                "type": "string",
+                "enum": [
+                    "none",
+                    "full",
+                    "mustache",
+                    "long",
+                    "goatee"
+                ],
+                "title": "Beard"
+            },
+            "BuyItemRequest": {
+                "type": "object",
+                "properties": {
+                    "item_id": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "item_id"
+                ],
+                "title": "BuyItemRequest"
+            },
+            "CharacterResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "appearance": {
+                        "type": "object",
+                        "properties": {
+                            "skin_tone": {
+                                "type": "string"
+                            },
+                            "hair_style": {
+                                "type": "string"
+                            },
+                            "hair_color": {
+                                "type": "string"
+                            },
+                            "beard": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "skin_tone",
+                            "hair_style",
+                            "hair_color",
+                            "beard"
+                        ]
+                    },
+                    "progress": {
+                        "type": "object",
+                        "properties": {
+                            "level": {
+                                "type": "string"
+                            },
+                            "xp_total": {
+                                "type": "string"
+                            },
+                            "xp_in_level": {
+                                "type": "string"
+                            },
+                            "xp_to_next_level": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "level",
+                            "xp_total",
+                            "xp_in_level",
+                            "xp_to_next_level"
+                        ]
+                    },
+                    "gold": {
+                        "type": "integer"
+                    },
+                    "streak": {
+                        "type": "object",
+                        "properties": {
+                            "days": {
+                                "type": "string"
+                            },
+                            "active_today": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "days",
+                            "active_today"
+                        ]
+                    },
+                    "shop": {
+                        "type": "object",
+                        "properties": {
+                            "new_items": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/ItemResource"
+                                }
+                            }
+                        },
+                        "required": [
+                            "new_items"
+                        ]
+                    },
+                    "equipment": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/EquippedItemResource"
+                        }
+                    },
+                    "next_goal": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "description": "Something to aim for besides gold at any level; null once every achievement is earned",
+                        "items": {}
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "appearance",
+                    "progress",
+                    "gold",
+                    "streak",
+                    "shop",
+                    "equipment",
+                    "next_goal",
+                    "created_at"
+                ],
+                "title": "CharacterResource"
+            },
+            "EquipItemRequest": {
+                "type": "object",
+                "properties": {
+                    "item_id": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "item_id"
+                ],
+                "title": "EquipItemRequest"
+            },
+            "EquippedItemResource": {
+                "type": "object",
+                "properties": {
+                    "slot": {
+                        "type": "string"
+                    },
+                    "item": {
+                        "$ref": "#/components/schemas/ItemResource"
+                    }
+                },
+                "required": [
+                    "slot",
+                    "item"
+                ],
+                "title": "EquippedItemResource"
+            },
+            "HabitDirection": {
+                "type": "string",
+                "enum": [
+                    "up",
+                    "down"
+                ],
+                "title": "HabitDirection"
+            },
+            "HairColor": {
+                "type": "string",
+                "enum": [
+                    "brown",
+                    "ginger",
+                    "blonde",
+                    "black",
+                    "white"
+                ],
+                "title": "HairColor"
+            },
+            "HairStyle": {
+                "type": "string",
+                "enum": [
+                    "bald",
+                    "short",
+                    "long",
+                    "braids",
+                    "long_straight",
+                    "braid",
+                    "mohawk",
+                    "tousled"
+                ],
+                "title": "HairStyle"
+            },
+            "InventoryItemResource": {
+                "type": "object",
+                "properties": {
+                    "item": {
+                        "$ref": "#/components/schemas/ItemResource"
+                    },
+                    "acquired_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "item",
+                    "acquired_at"
+                ],
+                "title": "InventoryItemResource"
+            },
+            "ItemResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slot": {
+                        "type": "string"
+                    },
+                    "sprite": {
+                        "type": "object",
+                        "properties": {
+                            "col": {
+                                "type": "integer"
+                            },
+                            "row": {
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "col",
+                            "row"
+                        ]
+                    },
+                    "required_level": {
+                        "type": "integer"
+                    },
+                    "price": {
+                        "type": "integer"
+                    },
+                    "is_rare": {
+                        "type": "boolean",
+                        "description": "Given for an achievement, never sold"
+                    }
+                },
+                "required": [
+                    "id",
+                    "code",
+                    "name",
+                    "slot",
+                    "sprite",
+                    "required_level",
+                    "price",
+                    "is_rare"
+                ],
+                "title": "ItemResource"
+            },
+            "ItemSlot": {
+                "type": "string",
+                "enum": [
+                    "head",
+                    "body",
+                    "legs",
+                    "weapon",
+                    "shield"
+                ],
+                "title": "ItemSlot"
+            },
+            "LoginRequest": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "remember": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "email",
+                    "password"
+                ],
+                "title": "LoginRequest"
+            },
+            "RegisterRequest": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 255
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "description": "Some browsers still report backward-compatible names such as Asia/Calcutta"
+                    },
+                    "password_confirmation": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "email",
+                    "password",
+                    "timezone",
+                    "password_confirmation"
+                ],
+                "title": "RegisterRequest"
+            },
+            "ReorderTasksRequest": {
+                "type": "object",
+                "properties": {
+                    "ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "description": "A task deleted in another tab fails here, and the client reloads the list.\nSomeone else's task fails the same way as a missing one, so its id does not leak"
+                        },
+                        "minItems": 1,
+                        "maxItems": 100,
+                        "uniqueItems": true
+                    }
+                },
+                "required": [
+                    "ids"
+                ],
+                "title": "ReorderTasksRequest"
+            },
+            "SkinTone": {
+                "type": "string",
+                "enum": [
+                    "light",
+                    "tan",
+                    "brown",
+                    "green"
+                ],
+                "title": "SkinTone"
+            },
+            "StoreCharacterRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "pattern": "^[\\pL\\pN _-]+$",
+                        "minLength": 2,
+                        "maxLength": 24
+                    },
+                    "skin_tone": {
+                        "$ref": "#/components/schemas/SkinTone"
+                    },
+                    "hair_style": {
+                        "$ref": "#/components/schemas/HairStyle"
+                    },
+                    "hair_color": {
+                        "$ref": "#/components/schemas/HairColor"
+                    },
+                    "beard": {
+                        "$ref": "#/components/schemas/Beard"
+                    }
+                },
+                "required": [
+                    "name",
+                    "skin_tone",
+                    "hair_style",
+                    "hair_color",
+                    "beard"
+                ],
+                "title": "StoreCharacterRequest"
+            },
+            "StoreHabitMarkRequest": {
+                "type": "object",
+                "properties": {
+                    "direction": {
+                        "$ref": "#/components/schemas/HabitDirection"
+                    }
+                },
+                "required": [
+                    "direction"
+                ],
+                "title": "StoreHabitMarkRequest"
+            },
+            "StoreTaskRequest": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/TaskType"
+                    },
+                    "difficulty": {
+                        "$ref": "#/components/schemas/TaskDifficulty"
+                    },
+                    "weekdays": {
+                        "type": "array",
+                        "description": "Only a daily has a schedule; left out, it is due every day",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 7
+                        },
+                        "minItems": 1,
+                        "maxItems": 7,
+                        "uniqueItems": true
+                    }
+                },
+                "required": [
+                    "title",
+                    "type"
+                ],
+                "title": "StoreTaskRequest"
+            },
+            "TaskDifficulty": {
+                "type": "string",
+                "enum": [
+                    "easy",
+                    "medium",
+                    "hard"
+                ],
+                "title": "TaskDifficulty"
+            },
+            "TaskResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "difficulty": {
+                        "type": "string"
+                    },
+                    "weekdays": {
+                        "type": "array",
+                        "items": {}
+                    },
+                    "scheduled_today": {
+                        "type": "boolean",
+                        "description": "A daily off its schedule today cannot be completed; a todo and a habit are always due"
+                    },
+                    "is_completed": {
+                        "type": "boolean"
+                    },
+                    "rewarded_today": {
+                        "type": "boolean",
+                        "description": "Deleting the task gives this back; false past the daily limit and for a todo done earlier"
+                    },
+                    "habit": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "description": "Today's marks of a habit; null for the other types",
+                        "properties": {
+                            "up_today": {
+                                "type": "integer"
+                            },
+                            "down_today": {
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "up_today",
+                            "down_today"
+                        ]
+                    },
+                    "completed_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "title",
+                    "type",
+                    "difficulty",
+                    "weekdays",
+                    "scheduled_today",
+                    "is_completed",
+                    "rewarded_today",
+                    "habit",
+                    "completed_at",
+                    "created_at"
+                ],
+                "title": "TaskResource"
+            },
+            "TaskType": {
+                "type": "string",
+                "enum": [
+                    "daily",
+                    "todo",
+                    "habit"
+                ],
+                "title": "TaskType"
+            },
+            "UpdateCharacterRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "pattern": "^[\\pL\\pN _-]+$",
+                        "minLength": 2,
+                        "maxLength": 24
+                    },
+                    "skin_tone": {
+                        "$ref": "#/components/schemas/SkinTone"
+                    },
+                    "hair_style": {
+                        "$ref": "#/components/schemas/HairStyle"
+                    },
+                    "hair_color": {
+                        "$ref": "#/components/schemas/HairColor"
+                    },
+                    "beard": {
+                        "$ref": "#/components/schemas/Beard"
+                    }
+                },
+                "required": [
+                    "name",
+                    "skin_tone",
+                    "hair_style",
+                    "hair_color",
+                    "beard"
+                ],
+                "title": "UpdateCharacterRequest"
+            },
+            "UpdatePasswordRequest": {
+                "type": "object",
+                "properties": {
+                    "current_password": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "password_confirmation": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "current_password",
+                    "password",
+                    "password_confirmation"
+                ],
+                "title": "UpdatePasswordRequest"
+            },
+            "UpdateTaskRequest": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
+                    "difficulty": {
+                        "$ref": "#/components/schemas/TaskDifficulty"
+                    },
+                    "weekdays": {
+                        "type": "array",
+                        "description": "Only a daily has a schedule",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 7
+                        },
+                        "minItems": 1,
+                        "maxItems": 7,
+                        "uniqueItems": true
+                    }
+                },
+                "title": "UpdateTaskRequest"
+            },
+            "UpdateTimezoneRequest": {
+                "type": "object",
+                "properties": {
+                    "timezone": {
+                        "type": "string",
+                        "description": "Some browsers still report backward-compatible names such as Asia/Calcutta"
+                    }
+                },
+                "required": [
+                    "timezone"
+                ],
+                "title": "UpdateTimezoneRequest"
+            },
+            "UserResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "timezone": {
+                        "type": "string"
+                    },
+                    "character": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CharacterResource"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "email",
+                    "timezone",
+                    "character"
+                ],
+                "title": "UserResource"
+            }
+        },
+        "responses": {
+            "ValidationException": {
+                "description": "Validation error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Errors overview."
+                                },
+                                "errors": {
+                                    "type": "object",
+                                    "description": "A detailed description of each field that failed validation.",
+                                    "additionalProperties": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "message",
+                                "errors"
+                            ]
+                        }
+                    }
+                }
+            },
+            "AuthenticationException": {
+                "description": "Unauthenticated",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error overview."
+                                }
+                            },
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            },
+            "ModelNotFoundException": {
+                "description": "Not found",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error overview."
+                                }
+                            },
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            },
+            "AuthorizationException": {
+                "description": "Authorization error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error overview."
+                                }
+                            },
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

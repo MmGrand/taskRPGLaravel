@@ -14,6 +14,11 @@ final class UserPasswordController extends Controller
 {
     private const int REMEMBER_TOKEN_LENGTH = 60;
 
+    /**
+     * Сменить пароль.
+     *
+     * Ответ 204. Другие сессии выходят из аккаунта. Не больше 5 попыток в минуту.
+     */
     // Other devices keep the old password hash in their sessions, so Sanctum's AuthenticateSession
     // logs them out on their next request; this session gets the new hash when the response leaves
     public function __invoke(UpdatePasswordRequest $request): Response

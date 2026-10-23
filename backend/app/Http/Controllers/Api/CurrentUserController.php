@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 
 final class CurrentUserController extends Controller
 {
+    /**
+     * Текущий пользователь с героем.
+     */
     public function __invoke(Request $request): UserResource
     {
         /** @var User $user */

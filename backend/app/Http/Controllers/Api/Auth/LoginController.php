@@ -11,6 +11,11 @@ use App\Models\User;
 
 final class LoginController extends Controller
 {
+    /**
+     * Войти.
+     *
+     * После 5 неудачных попыток вход блокируется на минуту.
+     */
     public function __invoke(LoginRequest $request): UserResource
     {
         $request->authenticate();

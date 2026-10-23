@@ -40,6 +40,11 @@ jobs:
       - run: composer lint
       - run: composer analyse
       - run: composer test:coverage
+      # The committed spec must match the code: regenerate and compare.
+      # Scramble reads column types from the schema, and CI has only the test database
+      - run: php artisan migrate --force && composer openapi && git diff --exit-code openapi.json
+        env:
+          DB_DATABASE: task_rpg_test
 
   frontend:
     runs-on: ubuntu-latest
@@ -59,3 +64,37 @@ jobs:
       - run: npm run type-check
       - run: npm run test:ci
       - run: npm run build-only
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      # No demo account: the test registers its own player
+      - run: docker compose up -d --build
+        working-directory: .
+        env:
+          SEED_DEMO: "false"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # The app container installs Composer packages and migrates on its first start
+      - name: Wait for the stack
+        run: timeout 600 sh -c 'until curl -sf http://localhost:8000/api/health >/dev/null && curl -sf http://localhost:5173 >/dev/null; do sleep 5; done'
+      - run: npm run test:e2e
+      - if: failure()
+        run: docker compose logs --no-color
+        working-directory: .
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7

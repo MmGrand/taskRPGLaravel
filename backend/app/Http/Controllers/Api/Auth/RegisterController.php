@@ -14,6 +14,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class RegisterController extends Controller
 {
+    /**
+     * Зарегистрироваться и войти.
+     */
     public function __invoke(RegisterRequest $request): JsonResponse
     {
         $user = User::create($request->validated());

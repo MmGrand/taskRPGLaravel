@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "dedoc/scramble": "^0.13.49",
         "laravel/framework": "^13.17",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0"
@@ -56,6 +57,7 @@
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test --coverage --min=80"
         ],
+        "openapi": "@php artisan scramble:export --path=openapi.json",
         "lint": "pint --test",
         "lint:fix": "pint",
         "analyse": "phpstan analyse --memory-limit=1G",

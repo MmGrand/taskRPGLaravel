@@ -14,6 +14,9 @@ final class InventoryController extends Controller
 {
     use ResolvesCharacter;
 
+    /**
+     * Вещи героя.
+     */
     public function __invoke(Request $request): AnonymousResourceCollection
     {
         $items = $this->characterOf($request)->inventoryItems()

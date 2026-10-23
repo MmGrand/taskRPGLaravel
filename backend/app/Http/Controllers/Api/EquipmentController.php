@@ -19,6 +19,9 @@ final class EquipmentController extends Controller
 
     public function __construct(private readonly EquipmentService $equipment) {}
 
+    /**
+     * Надеть вещь из инвентаря.
+     */
     public function update(EquipItemRequest $request, ItemSlot $slot): CharacterResource
     {
         $character = $this->characterOf($request);
@@ -28,6 +31,9 @@ final class EquipmentController extends Controller
         return new CharacterResource($character->load('equippedItems.item'));
     }
 
+    /**
+     * Снять вещь со слота.
+     */
     public function destroy(Request $request, ItemSlot $slot): CharacterResource
     {
         $character = $this->characterOf($request);

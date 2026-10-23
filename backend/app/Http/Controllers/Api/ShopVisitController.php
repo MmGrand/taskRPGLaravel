@@ -16,6 +16,11 @@ final class ShopVisitController extends Controller
 
     public function __construct(private readonly ShopService $shop) {}
 
+    /**
+     * Отметить, что магазин открыт.
+     *
+     * Снимает метку «Новое» с вещей, открывшихся с прошлого визита.
+     */
     // Opening the shop clears its "new" mark; repeating it changes nothing
     public function __invoke(Request $request): CharacterResource
     {
