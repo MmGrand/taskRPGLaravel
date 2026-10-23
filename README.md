@@ -36,6 +36,8 @@
 
 ## API
 
+Полное описание — OpenAPI 3.1, оно генерируется из кода ([Scramble](https://scramble.dedoc.co)): интерактивная документация на http://localhost:8000/docs/api (открыта без входа), JSON на http://localhost:8000/docs/api.json, снимок в репозитории — [backend/openapi.json](backend/openapi.json). Таблица ниже — краткий обзор.
+
 | Метод | Путь | Доступ | Назначение |
 |---|---|---|---|
 | GET | `/sanctum/csrf-cookie` | все | Выдать CSRF-cookie перед входом или регистрацией |
@@ -107,9 +109,9 @@ docker compose exec app php artisan balance:simulate --tasks=5            # --da
 |---|---|
 | ![Статистика: доля ежедневок за 30 дней, тепловая карта за 12 недель и привычки](docs/screenshots/stats.png) | ![Профиль: внешность героя, часовой пояс и пароль](docs/screenshots/profile.png) |
 
-| Достижения |
-|---|
-| ![Достижения: полученные вехи с датой, открытые с прогрессом и редкими вещами в награду](docs/screenshots/achievements.png) |
+| Достижения | Документация API |
+|---|---|
+| ![Достижения: полученные вехи с датой, открытые с прогрессом и редкими вещами в награду](docs/screenshots/achievements.png) | ![Документация API: эндпоинты по группам, аутентификация cookie-сессией](docs/screenshots/api-docs.png) |
 
 ## Архитектура
 
@@ -160,7 +162,8 @@ flowchart LR
 | Frontend | Vue 3, TypeScript, Vite, Pinia, Vue Router, Tailwind CSS 4 |
 | Хранилища | PostgreSQL 17, Redis 7 |
 | Окружение | Docker Compose |
-| Качество | Pest, Pint, Larastan (level 8), ESLint + Oxlint, Prettier, vue-tsc, Vitest, GitHub Actions |
+| Качество | Pest, Pint, Larastan (level 8), ESLint + Oxlint, Prettier, vue-tsc, Vitest, Playwright (E2E), GitHub Actions |
+| Документация API | OpenAPI 3.1 из кода (Scramble) |
 
 ## Структура
 
@@ -168,6 +171,7 @@ flowchart LR
 task-rpg/
 ├── backend/            # Laravel API
 ├── frontend/           # Vue SPA
+│   └── e2e/            # Playwright: главный сценарий в браузере
 ├── docker/             # Dockerfile, nginx, init-скрипты Postgres
 ├── .github/workflows/  # CI
 └── docker-compose.yml
@@ -188,6 +192,7 @@ docker compose up -d
 | SPA | http://localhost:5173 |
 | API | http://localhost:8000/api |
 | Health check | http://localhost:8000/api/health |
+| Документация API | http://localhost:8000/docs/api |
 | PostgreSQL | localhost:5432 (`task_rpg` / `secret`) |
 
 ## Проверки
@@ -199,7 +204,10 @@ docker compose exec app composer lint           # Pint
 docker compose exec app composer analyse        # Larastan
 docker compose exec app composer test           # Pest
 docker compose exec app composer test:coverage  # Pest + покрытие (минимум 80%)
+docker compose exec app composer openapi        # обновить backend/openapi.json после изменения API
 ```
+
+CI пересобирает `openapi.json` и падает, если закоммиченный снимок устарел.
 
 Frontend (локально, в каталоге `frontend/`, после `npm install`):
 
@@ -209,6 +217,20 @@ npm run check:format   # Prettier
 npm run type-check     # vue-tsc
 npm run test:ci        # Vitest + покрытие (минимум 80% по всему src/)
 npm run build
+```
+
+E2E (Playwright, в каталоге `frontend/`, против запущенного `docker compose up -d`):
+
+```bash
+npx playwright install chromium   # один раз: скачать браузер
+npm run test:e2e
+npx playwright show-report        # отчёт последнего прогона (в CI — артефакт playwright-report)
+```
+
+Сценарий проходит главный путь игрока в настоящем браузере: регистрация, герой, три тяжёлые разовые задачи, новый уровень, покупка «Зелёной банданы», надевание, выход и повторный вход. Проверяется то, чего не видят юнит-тесты: cookie-сессия Sanctum, CSRF и CORS между `localhost:5173` и `localhost:8000`. Каждый прогон регистрирует нового пользователя `e2e-…@example.test` и оставляет его в базе. Удалить их:
+
+```bash
+docker compose exec postgres psql -U task_rpg -d task_rpg -c "delete from users where email like 'e2e-%@example.test'"
 ```
 
 ## Известные ограничения
@@ -232,6 +254,8 @@ npm run build
 - **`entrypoint: no such file or directory`**: у `docker/php/entrypoint.sh` переносы строк CRLF. Репозиторий принудительно хранит LF (`.gitattributes`). Пересохрани файл с LF и выполни `docker compose build app`.
 - **Медленные ответы API на Windows**: это bind mount Docker Desktop. Помогает перенос репозитория в файловую систему WSL2.
 - **419 CSRF token mismatch**: открывай SPA по `http://localhost:5173`, а не `127.0.0.1`. Cookie сессии выдаются для домена `localhost`.
+- **E2E: `… is not reachable. Start the stack`**: тесты не поднимают стек сами. Выполни `docker compose up -d` и дождись, пока откроется http://localhost:5173.
+- **CI: diff в `openapi.json`**: API изменилось, а снимок нет. Выполни `docker compose exec app composer openapi` и закоммить файл.
 
 ## Ассеты
 

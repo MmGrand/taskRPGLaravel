@@ -23,6 +23,11 @@ final class TaskCompletionController extends Controller
         private readonly AchievementService $achievements,
     ) {}
 
+    /**
+     * Отметить задачу выполненной.
+     *
+     * Начисляет XP и золото, повтор ничего не меняет. Ежедневка не по расписанию или привычка — 422. `reward.capped: true` — дневной лимит наград исчерпан, отметка засчитана без награды.
+     */
     public function store(Request $request, Task $task): TaskResource
     {
         $this->ensureOwnedBy($request, $task);
@@ -36,6 +41,11 @@ final class TaskCompletionController extends Controller
         return $this->respondWithChange($request, $task, $reward, $this->achievements->award($user));
     }
 
+    /**
+     * Снять отметку за сегодня.
+     *
+     * Забирает ровно ту награду, которую дала отметка (`reward` с минусом).
+     */
     // An undo never takes an achievement back, so there is nothing to check
     public function destroy(Request $request, Task $task): TaskResource
     {

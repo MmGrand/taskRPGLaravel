@@ -26,6 +26,11 @@ final class HabitMarkController extends Controller
         private readonly AchievementService $achievements,
     ) {}
 
+    /**
+     * Отметить привычку «+» или «−».
+     *
+     * Ответ 201. «+» отвечает как выполнение задачи и награждает в пределах лимитов, у «−» `reward: null`. Не привычка или больше 50 отметок за день — 422.
+     */
     // A task that is not a habit throws HabitMarkRefused, which bootstrap/app.php turns into a 422
     public function store(StoreHabitMarkRequest $request, Task $task): JsonResponse
     {
@@ -42,6 +47,11 @@ final class HabitMarkController extends Controller
             ->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Снять последнюю отметку привычки за сегодня.
+     *
+     * Вместе с её наградой. Прошлые дни не трогаются.
+     */
     // Takes back the latest mark of today, for a mistaken tap
     public function destroy(Request $request, Task $task): JsonResponse
     {

@@ -18,6 +18,11 @@ final class ShopController extends Controller
 
     public function __construct(private readonly ProgressionService $progression) {}
 
+    /**
+     * Каталог магазина.
+     *
+     * Продаваемые вещи без редких, с отметками `owned` (куплено) и `unlocked` (уровень позволяет).
+     */
     public function __invoke(Request $request): JsonResponse
     {
         $character = $this->characterOf($request);

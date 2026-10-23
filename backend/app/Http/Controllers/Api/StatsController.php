@@ -14,6 +14,11 @@ final class StatsController extends Controller
 {
     public function __construct(private readonly StatsService $stats) {}
 
+    /**
+     * Статистика.
+     *
+     * `heatmap` — выполнения и плюсы привычек по дням за 12 недель, `dailies` — доля выполненных ежедневок по расписанию за 30 законченных дней, `habits` — плюсы и минусы каждой привычки за 30 дней.
+     */
     // The completion map of the last weeks, the share of dailies done and the marks of each habit; read only
     public function __invoke(Request $request): JsonResponse
     {

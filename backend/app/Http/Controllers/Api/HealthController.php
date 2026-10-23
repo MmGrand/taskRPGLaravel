@@ -14,6 +14,11 @@ use Throwable;
 
 final class HealthController extends Controller
 {
+    /**
+     * Состояние БД и Redis.
+     *
+     * 503, если что-то из них недоступно.
+     */
     public function __invoke(): JsonResponse
     {
         $checks = [

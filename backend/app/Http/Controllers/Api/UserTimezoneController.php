@@ -14,6 +14,11 @@ final class UserTimezoneController extends Controller
 {
     public function __construct(private readonly TimezoneService $timezones) {}
 
+    /**
+     * Сменить часовой пояс.
+     *
+     * Тот же пояс ничего не меняет. Повторная смена раньше чем через 24 часа — 422 с оставшимся временем.
+     */
     // The response is built from the saved row, so "today" in it already follows the new zone
     public function __invoke(UpdateTimezoneRequest $request): UserResource
     {

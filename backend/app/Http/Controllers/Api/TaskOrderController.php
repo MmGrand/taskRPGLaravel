@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\DB;
 
 final class TaskOrderController extends Controller
 {
+    /**
+     * Сохранить порядок задач.
+     *
+     * `ids` в новом порядке, ответ 204. Чужой или удалённый id — 422.
+     */
     // The listed tasks swap places among themselves: they take the positions they held, in the new order.
     // Tasks left out keep theirs, so reordering one list never moves another, even when two saves cross
     public function __invoke(ReorderTasksRequest $request): Response

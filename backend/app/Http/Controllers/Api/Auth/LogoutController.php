@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Auth;
 
 final class LogoutController extends Controller
 {
+    /**
+     * Выйти.
+     */
     public function __invoke(Request $request): Response
     {
         Auth::guard('web')->logout();

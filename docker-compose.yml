@@ -54,6 +54,8 @@ services:
     command: sh -c "npm ci && npm run dev"
     environment:
       VITE_USE_POLLING: "true"
+      # frontend/.env is not in git, so a fresh clone gets the API address from here
+      VITE_API_URL: "http://localhost:${APP_PORT:-8000}/api"
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-5173}:5173"
     volumes:
