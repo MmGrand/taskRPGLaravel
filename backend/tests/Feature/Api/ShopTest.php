@@ -9,7 +9,6 @@ use App\Models\InventoryItem;
 use App\Models\Item;
 use App\Models\User;
 use App\Services\StarterKit;
-use Database\Seeders\ItemCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // The namespace keeps this file's helper functions apart from those of other test files
@@ -33,7 +32,6 @@ function entry(array $catalog, string $code): array
 }
 
 beforeEach(function () {
-    $this->seed(ItemCatalogSeeder::class);
     $this->character = Character::factory()->create();
     $this->user = $this->character->user;
     app(StarterKit::class)->grantTo($this->character);

@@ -18,7 +18,6 @@ use App\Services\AchievementService;
 use App\Services\StarterKit;
 use App\ValueObjects\AchievementProgress;
 use Carbon\CarbonImmutable;
-use Database\Seeders\ItemCatalogSeeder;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +27,6 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->travelTo(CarbonImmutable::parse('2026-10-13 12:00:00', 'UTC'));
-    $this->seed(ItemCatalogSeeder::class);
     $this->user = User::factory()->create(['timezone' => 'Europe/Moscow']);
     $this->character = Character::factory()->for($this->user)->create();
     app(StarterKit::class)->grantTo($this->character);

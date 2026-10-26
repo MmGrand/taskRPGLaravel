@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Database\Seeders;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
 
-use App\Models\Item;
-use App\Services\StarterKit;
-use Illuminate\Database\Seeder;
-
-final class ItemCatalogSeeder extends Seeder
+// The catalog is reference data the game cannot run without, so migrations put it in every
+// environment. The rows are written out here, not read from the code: a later change to the
+// catalog is a new migration, and this one keeps working on a fresh database. Columns added
+// to items later need a default so these rows still insert.
+return new class extends Migration
 {
     // code, name, slot, sprite col, sprite row, required level, price, starter.
     // Every tile was checked on a character: headgear sits over the hair,
@@ -60,9 +61,9 @@ final class ItemCatalogSeeder extends Seeder
     ];
 
     /**
-     * Seed the item catalog.
+     * Run the migrations.
      */
-    public function run(StarterKit $starterKit): void
+    public function up(): void
     {
         $now = now();
         $row = fn (array $item, int $level, int $price, bool $starter, bool $rare): array => [
@@ -79,7 +80,8 @@ final class ItemCatalogSeeder extends Seeder
             'updated_at' => $now,
         ];
 
-        Item::query()->upsert(
+        // An upsert, since databases set up before this migration already got the catalog from a seeder
+        DB::table('items')->upsert(
             [
                 ...array_map(fn (array $item): array => $row($item, $item[5], $item[6], $item[7], false), self::CATALOG),
                 ...array_map(fn (array $item): array => $row($item, 1, 0, false, true), self::RARE),
@@ -88,7 +90,25 @@ final class ItemCatalogSeeder extends Seeder
             ['name', 'slot', 'sprite_col', 'sprite_row', 'required_level', 'price', 'is_starter', 'is_rare', 'updated_at'],
         );
 
-        // Characters created before the catalog existed get their starter kit too
-        $starterKit->grantToAll();
+        // Characters created while the catalog was empty get their starter kit too.
+        // Plain queries rather than App\Services\StarterKit, so later changes to the service
+        // cannot break this migration
+        DB::table('inventory_items')->insertOrIgnoreUsing(
+            ['character_id', 'item_id', 'acquired_at'],
+            DB::table('characters')
+                ->crossJoin('items')
+                ->where('items.is_starter', true)
+                ->select(['characters.id', 'items.id'])
+                ->selectRaw('?::timestamptz', [$now]),
+        );
     }
-}
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        // Left in place: characters own and wear these items, and deleting them would take
+        // purchases with them. Running up() again is safe, it updates the rows in place
+    }
+};

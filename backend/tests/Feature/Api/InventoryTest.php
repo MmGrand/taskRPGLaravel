@@ -7,14 +7,12 @@ use App\Models\InventoryItem;
 use App\Models\Item;
 use App\Models\User;
 use App\Services\StarterKit;
-use Database\Seeders\ItemCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->seed(ItemCatalogSeeder::class);
     $this->character = Character::factory()->create();
     app(StarterKit::class)->grantTo($this->character);
 });

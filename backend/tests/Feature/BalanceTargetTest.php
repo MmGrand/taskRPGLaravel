@@ -9,7 +9,6 @@ namespace Tests\Feature\BalanceTarget;
 use App\Enums\TaskDifficulty;
 use App\Models\Item;
 use App\Services\BalanceSimulator;
-use Database\Seeders\ItemCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -25,7 +24,6 @@ const TOP_LEVEL = 10;
 it('keeps the real balance on target', function () {
     // Arrange
     $this->useRealBalance();
-    $this->seed(ItemCatalogSeeder::class);
 
     // Act
     $simulation = app(BalanceSimulator::class)->simulate(5, 90, TaskDifficulty::Medium, Item::query()->get());

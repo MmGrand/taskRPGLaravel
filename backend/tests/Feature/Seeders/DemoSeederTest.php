@@ -13,7 +13,6 @@ use App\Models\User;
 use App\Services\StatsService;
 use Carbon\CarbonImmutable;
 use Database\Seeders\DemoSeeder;
-use Database\Seeders\ItemCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -31,7 +30,6 @@ const TODAY_GOLD = 16;
 
 function seedDemo(TestCase $test): User
 {
-    $test->seed(ItemCatalogSeeder::class);
     $test->seed(DemoSeeder::class);
 
     return User::query()->where('email', DemoSeeder::EMAIL)->sole();
@@ -277,7 +275,6 @@ it('gives the stats page a share of the demo dailies', function () {
 
 it('never creates the account with a published password outside local development', function () {
     // Arrange
-    $this->seed(ItemCatalogSeeder::class);
     $this->app->detectEnvironment(fn (): string => 'production');
 
     // Act: directly, since db:seed would ask to confirm running in production
@@ -295,11 +292,10 @@ it('lets the reviewer sign in with the documented password', function () {
     expect(Hash::check(DemoSeeder::PASSWORD, $demo->password))->toBeTrue();
 });
 
-it('seeds the catalog and the demo from the default seeder', function () {
+it('seeds the demo from the default seeder', function () {
     // Act
     $this->seed();
 
     // Assert
-    expect(Item::query()->count())->toBe(37)
-        ->and(User::query()->where('email', DemoSeeder::EMAIL)->exists())->toBeTrue();
+    expect(User::query()->where('email', DemoSeeder::EMAIL)->exists())->toBeTrue();
 });
