@@ -12,7 +12,6 @@ use App\Models\Item;
 use App\Models\User;
 use App\Services\EquipmentService;
 use App\Services\StarterKit;
-use Database\Seeders\ItemCatalogSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -31,7 +30,6 @@ function equipmentUrl(string $slot): string
 }
 
 beforeEach(function () {
-    $this->seed(ItemCatalogSeeder::class);
     $this->character = Character::factory()->create();
     $this->user = $this->character->user;
     app(StarterKit::class)->grantTo($this->character);

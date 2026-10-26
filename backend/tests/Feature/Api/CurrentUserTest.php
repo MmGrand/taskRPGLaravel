@@ -8,7 +8,6 @@ use App\Models\Item;
 use App\Models\User;
 use App\Services\EquipmentService;
 use App\Services\StarterKit;
-use Database\Seeders\ItemCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
@@ -83,7 +82,6 @@ it('loads the current user and the character without extra queries for the owner
 
 it('returns what the character wears', function () {
     // Arrange
-    $this->seed(ItemCatalogSeeder::class);
     $character = Character::factory()->create();
     app(StarterKit::class)->grantTo($character);
     $sword = Item::query()->where('code', 'wooden_sword')->sole();

@@ -11,7 +11,6 @@ use App\Models\User;
 use App\Services\ShopService;
 use App\Services\StarterKit;
 use Carbon\CarbonImmutable;
-use Database\Seeders\ItemCatalogSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -33,7 +32,6 @@ function purchase(Item $item): array
 
 beforeEach(function () {
     $this->travelTo(CarbonImmutable::parse('2026-10-13 12:00:00', 'UTC'));
-    $this->seed(ItemCatalogSeeder::class);
     $this->character = Character::factory()->withXp(LEVEL_TWO_XP, 40)->create();
     $this->user = $this->character->user;
     app(StarterKit::class)->grantTo($this->character);

@@ -2,15 +2,12 @@
 
 declare(strict_types=1);
 
-use Database\Seeders\ItemCatalogSeeder;
+use App\Models\Item;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 it('plays the progression on the catalog and sums it up', function () {
-    // Arrange
-    $this->seed(ItemCatalogSeeder::class);
-
     // Act & Assert
     $this->artisan('balance:simulate', ['--tasks' => 5, '--days' => 120])
         ->expectsOutputToContain('Bought Зелёная бандана (30)')
@@ -20,9 +17,6 @@ it('plays the progression on the catalog and sums it up', function () {
 });
 
 it('says when the days are not enough for the catalog', function () {
-    // Arrange
-    $this->seed(ItemCatalogSeeder::class);
-
     // Act & Assert
     $this->artisan('balance:simulate', ['--tasks' => 1, '--days' => 3])
         ->expectsOutputToContain('Catalog not finished in 3 days')
@@ -30,9 +24,6 @@ it('says when the days are not enough for the catalog', function () {
 });
 
 it('refuses options it cannot play', function (array $options, string $message) {
-    // Arrange
-    $this->seed(ItemCatalogSeeder::class);
-
     // Act & Assert
     $this->artisan('balance:simulate', $options)
         ->expectsOutputToContain($message)
@@ -45,8 +36,11 @@ it('refuses options it cannot play', function (array $options, string $message) 
 ]);
 
 it('asks for the catalog when there is none', function () {
+    // Arrange
+    Item::query()->delete();
+
     // Act & Assert
     $this->artisan('balance:simulate')
-        ->expectsOutputToContain('Run the ItemCatalogSeeder first')
+        ->expectsOutputToContain('Run the migrations first')
         ->assertFailed();
 });

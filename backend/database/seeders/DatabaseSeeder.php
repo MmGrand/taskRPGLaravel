@@ -16,7 +16,7 @@ final class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // The catalog first: the demo hero buys and wears its items
-        $this->call([ItemCatalogSeeder::class, DemoSeeder::class]);
+        // The item catalog is not seeded: it is reference data, and the migrations fill it
+        $this->call(DemoSeeder::class);
     }
 }

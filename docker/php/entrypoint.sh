@@ -11,8 +11,6 @@ if [ ! -f .env ]; then
 fi
 
 php artisan migrate --force
-# Reference data: the item catalog and starter kits (safe to run on every start)
-php artisan db:seed --class=ItemCatalogSeeder --force
 # A ready demo hero for reviewers; an existing demo account is left as is. SEED_DEMO=false turns it off
 if [ "${SEED_DEMO:-true}" != "false" ]; then
     php artisan db:seed --class=DemoSeeder --force

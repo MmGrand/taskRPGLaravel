@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 use App\Models\Character;
 use App\Models\User;
-use Database\Seeders\ItemCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->seed(ItemCatalogSeeder::class);
     $this->user = User::factory()->create();
     $this->payload = [
         'name' => 'Torin',

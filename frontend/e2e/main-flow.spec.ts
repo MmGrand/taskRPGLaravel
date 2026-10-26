@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 const HERO_NAME = 'Тестовый герой'
 const PASSWORD = 'e2e-password'
 // Three hard todos give level 2 and enough gold for a level 2 item
-// (backend/config/progression.php, ItemCatalogSeeder): a rebalance that breaks this fails the level step
+// (backend/config/progression.php, the fill_item_catalog migration): a rebalance that breaks this fails the level step
 const TASK_TITLES = ['Тренировка', 'Глава книги', 'Уборка'] as const
 const ITEM_NAME = 'Зелёная бандана'
 

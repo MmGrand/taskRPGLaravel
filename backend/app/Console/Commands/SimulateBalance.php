@@ -44,7 +44,7 @@ final class SimulateBalance extends Command
         $catalog = Item::query()->orderBy('required_level')->orderBy('id')->get();
 
         if ($catalog->isEmpty()) {
-            $this->error('The item catalog is empty. Run the ItemCatalogSeeder first.');
+            $this->error('The item catalog is empty. Run the migrations first.');
 
             return self::FAILURE;
         }
